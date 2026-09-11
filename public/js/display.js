@@ -60,9 +60,10 @@ function renderDisplay() {
     statusPill.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-slate-500"></span><span>ලකුණු ලබාදීම විවෘත වන තෙක් රැඳී සිටින්න</span>';
   }
 
-  // Giant Display Number
-  document.getElementById('dispItemNumber').textContent = `අංක ${formattedNum}`;
-  document.getElementById('dispItemSubtext').textContent = `${isFlags ? 'Flag' : 'Emblem'} Design #${formattedNum}`;
+  // Giant Display Number (Replacing Image)
+  document.getElementById('dispCompTag').textContent = isFlags ? 'කොඩි තරඟය' : 'ලාංඡන තරඟය';
+  document.getElementById('dispGiantNumber').textContent = formattedNum;
+  document.getElementById('dispItemSubtext').textContent = `නිර්මාණ අංක ${formattedNum} (${isFlags ? 'Flag' : 'Emblem'} #${formattedNum})`;
 
   // 20 Judges Submission Progress
   const compScores = (state.scores && state.scores[comp]) || {};

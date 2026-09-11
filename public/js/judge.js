@@ -99,7 +99,9 @@ function renderJudgeView() {
   document.getElementById('compNameBadge').textContent = isFlags ? 'කොඩි තරඟය' : 'ලාංඡන තරඟය';
   document.getElementById('activeCompLabel').textContent = compLabel;
 
-  const numText = `අංක ${num < 10 ? '0' + num : num}`;
+  const formattedNum = num < 10 ? '0' + num : num;
+  const numText = `නිර්මාණ අංක ${formattedNum}`;
+  document.getElementById('activeNumberDigits').textContent = formattedNum;
   document.getElementById('activeItemNumberDisplay').textContent = numText;
 
   // Check if judge already scored this active item
