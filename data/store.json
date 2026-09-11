@@ -1,0 +1,219 @@
+{
+  "activeCompetition": "flags",
+  "activeItemId": "flag-1",
+  "votingLocked": false,
+  "broadcastActiveItem": true,
+  "judges": [
+    {
+      "id": 1,
+      "name": "Judge 01",
+      "pin": "1001",
+      "active": true
+    },
+    {
+      "id": 2,
+      "name": "Judge 02",
+      "pin": "1002",
+      "active": true
+    },
+    {
+      "id": 3,
+      "name": "Judge 03",
+      "pin": "1003",
+      "active": true
+    },
+    {
+      "id": 4,
+      "name": "Judge 04",
+      "pin": "1004",
+      "active": true
+    },
+    {
+      "id": 5,
+      "name": "Judge 05",
+      "pin": "1005",
+      "active": true
+    },
+    {
+      "id": 6,
+      "name": "Judge 06",
+      "pin": "1006",
+      "active": true
+    },
+    {
+      "id": 7,
+      "name": "Judge 07",
+      "pin": "1007",
+      "active": true
+    },
+    {
+      "id": 8,
+      "name": "Judge 08",
+      "pin": "1008",
+      "active": true
+    },
+    {
+      "id": 9,
+      "name": "Judge 09",
+      "pin": "1009",
+      "active": true
+    },
+    {
+      "id": 10,
+      "name": "Judge 10",
+      "pin": "1010",
+      "active": true
+    },
+    {
+      "id": 11,
+      "name": "Judge 11",
+      "pin": "1011",
+      "active": true
+    },
+    {
+      "id": 12,
+      "name": "Judge 12",
+      "pin": "1012",
+      "active": true
+    },
+    {
+      "id": 13,
+      "name": "Judge 13",
+      "pin": "1013",
+      "active": true
+    },
+    {
+      "id": 14,
+      "name": "Judge 14",
+      "pin": "1014",
+      "active": true
+    },
+    {
+      "id": 15,
+      "name": "Judge 15",
+      "pin": "1015",
+      "active": true
+    },
+    {
+      "id": 16,
+      "name": "Judge 16",
+      "pin": "1016",
+      "active": true
+    },
+    {
+      "id": 17,
+      "name": "Judge 17",
+      "pin": "1017",
+      "active": true
+    },
+    {
+      "id": 18,
+      "name": "Judge 18",
+      "pin": "1018",
+      "active": true
+    },
+    {
+      "id": 19,
+      "name": "Judge 19",
+      "pin": "1019",
+      "active": true
+    },
+    {
+      "id": 20,
+      "name": "Judge 20",
+      "pin": "1020",
+      "active": true
+    }
+  ],
+  "competitions": {
+    "flags": {
+      "id": "flags",
+      "name": "කොඩි තේරීමේ තරඟය (Flag Competition)",
+      "description": "ආයතනයේ හොඳම කොඩිය තේරීම සඳහා 1 සිට 10 දක්වා ලකුණු ලබා දෙන්න.",
+      "items": [
+        {
+          "id": "flag-1",
+          "number": 1,
+          "title": "Flag #01",
+          "description": "නිර්මාණ අංක 01 (Design #01)",
+          "imageUrl": "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=600&auto=format&fit=crop&q=80"
+        },
+        {
+          "id": "flag-2",
+          "number": 2,
+          "title": "Flag #02",
+          "description": "නිර්මාණ අංක 02 (Design #02)",
+          "imageUrl": "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=600&auto=format&fit=crop&q=80"
+        },
+        {
+          "id": "flag-3",
+          "number": 3,
+          "title": "Flag #03",
+          "description": "නිර්මාණ අංක 03 (Design #03)",
+          "imageUrl": "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=600&auto=format&fit=crop&q=80"
+        },
+        {
+          "id": "flag-4",
+          "number": 4,
+          "title": "Flag #04",
+          "description": "නිර්මාණ අංක 04 (Design #04)",
+          "imageUrl": "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=600&auto=format&fit=crop&q=80"
+        },
+        {
+          "id": "flag-5",
+          "number": 5,
+          "title": "Flag #05",
+          "description": "නිර්මාණ අංක 05 (Design #05)",
+          "imageUrl": "https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&auto=format&fit=crop&q=80"
+        }
+      ]
+    },
+    "emblems": {
+      "id": "emblems",
+      "name": "ලාංඡන තේරීමේ තරඟය (Emblem Competition)",
+      "description": "ආයතනයේ හොඳම ලාංඡනය තේරීම සඳහා 1 සිට 10 දක්වා ලකුණු ලබා දෙන්න.",
+      "items": [
+        {
+          "id": "emblem-1",
+          "number": 1,
+          "title": "Emblem #01",
+          "description": "නිර්මාණ අංක 01 (Design #01)",
+          "imageUrl": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80"
+        },
+        {
+          "id": "emblem-2",
+          "number": 2,
+          "title": "Emblem #02",
+          "description": "නිර්මාණ අංක 02 (Design #02)",
+          "imageUrl": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80"
+        },
+        {
+          "id": "emblem-3",
+          "number": 3,
+          "title": "Emblem #03",
+          "description": "නිර්මාණ අංක 03 (Design #03)",
+          "imageUrl": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80"
+        },
+        {
+          "id": "emblem-4",
+          "number": 4,
+          "title": "Emblem #04",
+          "description": "නිර්මාණ අංක 04 (Design #04)",
+          "imageUrl": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80"
+        }
+      ]
+    }
+  },
+  "scores": {
+    "flags": {
+      "flag-1": {
+        "1": {
+          "score": 9,
+          "comment": "Great color harmony!",
+          "submittedAt": "2026-09-11T03:58:40.536Z"
+        }
+      }
+    },
+    "emblems": {}
+  }
+}

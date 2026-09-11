@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="si" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flag & Emblem Judging System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', 'Noto Sans Sinhala', sans-serif; }
+  </style>
+</head>
+<body class="h-full flex flex-col justify-between">
+  <!-- Top Navigation / Header -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-red-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-amber-500/20">
+          <i class="fa-solid fa-trophy"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-white leading-tight">විනිශ්චය පද්ධතිය (Digital Judging)</h1>
+          <p class="text-xs text-slate-400">Flag & Emblem Selection Event</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2">
+        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5"></span> Live Cloud Active
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero & Portals -->
+  <main class="max-w-6xl mx-auto px-4 py-10 w-full">
+    <div class="text-center max-w-2xl mx-auto mb-12">
+      <div class="inline-block px-4 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-full text-amber-400 text-xs font-semibold mb-4 tracking-wide uppercase">
+        20 Judges • Scale 1-10 • Real-time Sync
+      </div>
+      <h2 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-snug">
+        හොඳම කොඩිය සහ ලාංඡනය තේරීමේ විනිශ්චය පද්ධතිය
+      </h2>
+      <p class="text-slate-400 mt-3 text-sm sm:text-base">
+        විනිශ්චයකරුවන් 20 දෙනා සඳහා සජීවී ඩිජිටල් ලකුණු ලබාදීමේ සහ ප්‍රතිඵල නිරීක්ෂණ මධ්‍යස්ථානයට පහතින් පිවිසෙන්න.
+      </p>
+    </div>
+
+    <!-- 4 Action Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      
+      <!-- 1. Judge Portal -->
+      <a href="/judge.html" class="group relative bg-slate-900 border border-slate-800 hover:border-amber-500/50 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:shadow-amber-500/10 flex flex-col justify-between">
+        <div>
+          <div class="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+            <i class="fa-solid fa-mobile-screen"></i>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-2 group-hover:text-amber-400 transition-colors">
+            විනිශ්චයකාර පිවිසුම
+          </h3>
+          <p class="text-xs text-amber-400/80 font-medium mb-2">Judge Mobile Portal</p>
+          <p class="text-slate-400 text-sm leading-relaxed">
+            විනිශ්චයකරුවන් 20 දෙනාට තම දුරකථනයෙන් 1 සිට 10 දක්වා ලකුණු ලබාදීම සඳහා.
+          </p>
+        </div>
+        <div class="mt-6 flex items-center text-sm font-semibold text-amber-400 group-hover:translate-x-1 transition-transform">
+          පිවිසෙන්න <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+        </div>
+      </a>
+
+      <!-- 2. Admin Panel -->
+      <a href="/admin.html" class="group relative bg-slate-900 border border-slate-800 hover:border-blue-500/50 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10 flex flex-col justify-between">
+        <div>
+          <div class="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+            <i class="fa-solid fa-sliders"></i>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">
+            පරිපාලක පැනලය
+          </h3>
+          <p class="text-xs text-blue-400/80 font-medium mb-2">Admin Control Dashboard</p>
+          <p class="text-slate-400 text-sm leading-relaxed">
+            තරඟ මෙහෙයවීම, විනිශ්චයකරුවන්ගේ ප්‍රගතිය, නිර්මාණ එකතු කිරීම සහ ලකුණු Excel/CSV ලබාගැනීම.
+          </p>
+        </div>
+        <div class="mt-6 flex items-center text-sm font-semibold text-blue-400 group-hover:translate-x-1 transition-transform">
+          පාලක පුවරුවට <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+        </div>
+      </a>
+
+      <!-- 3. Projector / Main Display -->
+      <a href="/display.html" class="group relative bg-slate-900 border border-slate-800 hover:border-emerald-500/50 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:shadow-emerald-500/10 flex flex-col justify-between">
+        <div>
+          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+            <i class="fa-solid fa-display"></i>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors">
+            ප්‍රධාන තිරය / Projector
+          </h3>
+          <p class="text-xs text-emerald-400/80 font-medium mb-2">Main Hall Display View</p>
+          <p class="text-slate-400 text-sm leading-relaxed">
+            ශාලාවේ ප්‍රොජෙක්ටරය හෝ ලොකු තිරය සඳහා සජීවී නිර්මාණය සහ අවසාන ජයග්‍රාහී ලැයිස්තුව ප්‍රදර්ශනය.
+          </p>
+        </div>
+        <div class="mt-6 flex items-center text-sm font-semibold text-emerald-400 group-hover:translate-x-1 transition-transform">
+          තිරය විවෘත කරන්න <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+        </div>
+      </a>
+
+      <!-- 4. Printable QR Sheets -->
+      <a href="/qr-sheet.html" class="group relative bg-slate-900 border border-slate-800 hover:border-purple-500/50 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/10 flex flex-col justify-between">
+        <div>
+          <div class="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">
+            <i class="fa-solid fa-qrcode"></i>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-2 group-hover:text-purple-400 transition-colors">
+            විනිශ්චය QR කාඩ්පත්
+          </h3>
+          <p class="text-xs text-purple-400/80 font-medium mb-2">Printable QR Cards for 20 Judges</p>
+          <p class="text-slate-400 text-sm leading-relaxed">
+            විනිශ්චයකරුවන් 20 දෙනාගේ මේස මත තැබීමට එක් එක් අයට වෙන්වූ QR Code සහ PIN මුද්‍රණය කරගන්න.
+          </p>
+        </div>
+        <div class="mt-6 flex items-center text-sm font-semibold text-purple-400 group-hover:translate-x-1 transition-transform">
+          කාඩ්පත් මුද්‍රණය <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+        </div>
+      </a>
+
+    </div>
+
+    <!-- Quick Features Highlight -->
+    <div class="mt-14 bg-slate-900/50 border border-slate-800/80 rounded-2xl p-6 sm:p-8">
+      <h4 class="text-base font-bold text-slate-200 mb-4 flex items-center">
+        <i class="fa-solid fa-circle-check text-emerald-400 mr-2"></i> පද්ධතියේ ප්‍රධාන පහසුකම් (Features Overview)
+      </h4>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm text-slate-400">
+        <div class="flex items-start space-x-3">
+          <div class="text-amber-400 mt-1"><i class="fa-solid fa-mobile"></i></div>
+          <div>
+            <strong class="text-slate-200 block mb-1">App Install අවශ්‍ය නැත</strong>
+            ඕනෑම Phone එකක කැමරාවෙන් QR එක Scan කර කෙලින්ම පිවිසිය හැක.
+          </div>
+        </div>
+        <div class="flex items-start space-x-3">
+          <div class="text-blue-400 mt-1"><i class="fa-solid fa-bolt"></i></div>
+          <div>
+            <strong class="text-slate-200 block mb-1">තත්පරයෙන් පංගුවක Real-time Sync</strong>
+            විනිශ්චයකරුවන් ලකුණු දෙන විට Admin පැනලයේ ක්ෂණිකව සටහන් වේ.
+          </div>
+        </div>
+        <div class="flex items-start space-x-3">
+          <div class="text-purple-400 mt-1"><i class="fa-solid fa-file-excel"></i></div>
+          <div>
+            <strong class="text-slate-200 block mb-1">One-Click Excel / CSV Export</strong>
+            විනිශ්චයකරුවන් 20 දෙනාගේ සියලු ලකුණු සහ සාමාන්‍යය සහිත වාර්තාව එක ක්ලික් එකෙන්.
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-900 py-6 text-center text-xs text-slate-500">
+    Flag & Emblem Digital Judging System • Powered by Node.js & WebSockets • Cloud Ready
+  </footer>
+</body>
+</html>

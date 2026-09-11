@@ -1,0 +1,89 @@
+const http = require('http');
+const { server } = require('../server');
+
+async function testServer() {
+  console.log('Starting verification test on port 3001...');
+
+  await new Promise((resolve) => server.listen(3001, resolve));
+
+  function request(path, options = {}) {
+    return new Promise((resolve, reject) => {
+      const opt = {
+        hostname: '127.0.0.1',
+        port: 3001,
+        path,
+        method: options.method || 'GET',
+        headers: options.headers || {}
+      };
+
+      const req = http.request(opt, (res) => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+          try {
+            resolve({ status: res.statusCode, body: JSON.parse(data), headers: res.headers });
+          } catch (e) {
+            resolve({ status: res.statusCode, body: data, headers: res.headers });
+          }
+        });
+      });
+      req.on('error', reject);
+      if (options.body) {
+        req.write(options.body);
+      }
+      req.end();
+    });
+  }
+
+  try {
+    // 1. Test /api/state
+    console.log('1. Checking /api/state...');
+    const stateRes = await request('/api/state');
+    if (stateRes.status !== 200) throw new Error(`State returned status ${stateRes.status}`);
+    if (stateRes.body.judges.length !== 20) throw new Error(`Expected 20 judges, got ${stateRes.body.judges.length}`);
+    console.log(`✅ State endpoint passed (${stateRes.body.judges.length} judges configured)`);
+
+    // 2. Test Judge Login
+    console.log('2. Testing Judge Login (Judge 01, PIN 1001)...');
+    const loginRes = await request('/api/judge/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ judgeId: 1, pin: '1001' })
+    });
+    if (loginRes.status !== 200 || !loginRes.body.success) throw new Error('Judge login failed');
+    console.log('✅ Judge login passed');
+
+    // 3. Test Submit Score
+    console.log('3. Submitting score 9 from Judge 01 for Flag #01...');
+    const scoreRes = await request('/api/score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        judgeId: 1,
+        pin: '1001',
+        competitionId: 'flags',
+        itemId: 'flag-1',
+        score: 9,
+        comment: 'Great color harmony!'
+      })
+    });
+    if (scoreRes.status !== 200 || !scoreRes.body.success) throw new Error('Score submission failed');
+    console.log('✅ Score submission passed');
+
+    // 4. Test Export CSV
+    console.log('4. Testing CSV Export...');
+    const csvRes = await request('/api/export/csv?competitionId=flags');
+    if (csvRes.status !== 200 || typeof csvRes.body !== 'string' || !csvRes.body.includes('Judge 01')) {
+      throw new Error('CSV export failed');
+    }
+    console.log('✅ CSV Export passed');
+
+    console.log('\n🎉 ALL TESTS PASSED SUCCESSFULLY! Ready for Render deployment.');
+    server.close(() => process.exit(0));
+  } catch (err) {
+    console.error('❌ Test failed:', err.message);
+    server.close(() => process.exit(1));
+  }
+}
+
+testServer();
