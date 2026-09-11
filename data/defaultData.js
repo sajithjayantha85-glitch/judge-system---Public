@@ -27,5 +27,13 @@ module.exports = {
     flags: {},
     emblems: {},
     stamps: {}
+  },
+
+  // Optional Artwork Images:
+  // images[competition][itemNumber] = '/uploads/flags-1-172608.png'
+  images: {
+    flags: {},
+    emblems: {},
+    stamps: {}
   }
 };

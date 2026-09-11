@@ -165,6 +165,25 @@ function renderAdminUI() {
   document.getElementById('matrixHeader').textContent = `Live Submissions for Design #${formattedNum}`;
   document.getElementById('inputTotalItems').value = totalCount;
 
+  // 2.1 Artwork Image Preview or Upload Prompt
+  const previewBox = document.getElementById('adminImagePreviewBox');
+  const uploadPrompt = document.getElementById('adminImageUploadPrompt');
+  const thumbnailImg = document.getElementById('adminThumbnailImg');
+  const filenameLabel = document.getElementById('adminImageFilename');
+  const compImages = (state.images && state.images[comp]) || {};
+  const currentImgUrl = compImages[num.toString()];
+
+  if (currentImgUrl) {
+    thumbnailImg.src = currentImgUrl;
+    filenameLabel.textContent = currentImgUrl.split('/').pop();
+    previewBox.classList.remove('hidden');
+    uploadPrompt.classList.add('hidden');
+  } else {
+    thumbnailImg.src = '';
+    previewBox.classList.add('hidden');
+    uploadPrompt.classList.remove('hidden');
+  }
+
   // 3. Number Pills (1 to totalCount)
   const pillsContainer = document.getElementById('numberPills');
   pillsContainer.innerHTML = '';
@@ -173,6 +192,7 @@ function renderAdminUI() {
   for (let i = 1; i <= totalCount; i++) {
     const isCurrent = i === num;
     const hasScores = compScores[i.toString()] && Object.keys(compScores[i.toString()]).length > 0;
+    const hasImage = compImages[i.toString()];
     const btn = document.createElement('button');
     btn.className = `flex-shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center space-x-1 ${
       isCurrent 
@@ -181,7 +201,10 @@ function renderAdminUI() {
           ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
           : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-white'
     }`;
-    btn.innerHTML = `<span>#${i < 10 ? '0' + i : i}</span> ${hasScores ? '<i class="fa-solid fa-check text-[10px]"></i>' : ''}`;
+    let iconsHtml = '';
+    if (hasImage) iconsHtml += '<i class="fa-solid fa-image text-[9px] text-amber-300"></i> ';
+    if (hasScores) iconsHtml += '<i class="fa-solid fa-check text-[10px]"></i>';
+    btn.innerHTML = `<span>#${i < 10 ? '0' + i : i}</span> ${iconsHtml}`;
     btn.onclick = () => setNumber(i);
     pillsContainer.appendChild(btn);
   }
@@ -471,6 +494,74 @@ async function updateTotalItems(count) {
   }
 }
 
+function triggerImageUpload() {
+  const fileInput = document.getElementById('adminFileInput');
+  if (fileInput) fileInput.click();
+}
+
+async function handleFileSelected(input) {
+  if (!input.files || input.files.length === 0) return;
+  const file = input.files[0];
+  const formData = new FormData();
+  formData.append('image', file);
+  formData.append('competition', state.activeCompetition);
+  formData.append('itemNumber', state.activeItemNumber);
+
+  try {
+    const res = await fetch('/api/admin/upload-image', {
+      method: 'POST',
+      headers: {
+        'x-admin-password': getAdminPassword()
+      },
+      body: formData
+    });
+    const data = await res.json();
+    if (data.success) {
+      if (!state.images) state.images = { flags: {}, emblems: {}, stamps: {} };
+      if (!state.images[state.activeCompetition]) state.images[state.activeCompetition] = {};
+      state.images[state.activeCompetition][state.activeItemNumber.toString()] = data.imageUrl;
+      renderAdminUI();
+    } else {
+      alert(data.message || 'Failed to upload image.');
+    }
+  } catch (err) {
+    alert('Connection error during upload.');
+  } finally {
+    input.value = '';
+  }
+}
+
+async function removeCurrentImage() {
+  if (!confirm(`Are you sure you want to remove the artwork image for Design #${state.activeItemNumber < 10 ? '0' + state.activeItemNumber : state.activeItemNumber}?`)) {
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/admin/remove-image', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-password': getAdminPassword()
+      },
+      body: JSON.stringify({
+        competition: state.activeCompetition,
+        itemNumber: state.activeItemNumber
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      if (state.images && state.images[state.activeCompetition]) {
+        delete state.images[state.activeCompetition][state.activeItemNumber.toString()];
+      }
+      renderAdminUI();
+    } else {
+      alert(data.message || 'Failed to remove image.');
+    }
+  } catch (err) {
+    alert('Connection error. Please try again.');
+  }
+}
+
 async function confirmResetScores() {
   let compName = 'Flag Competition';
   if (state.activeCompetition === 'emblems') compName = 'Emblem Competition';
@@ -527,6 +618,17 @@ function setupSocketListeners() {
     renderAdminUI();
   });
 
+  socket.on('item-image-updated', (data) => {
+    if (!state.images) state.images = { flags: {}, emblems: {}, stamps: {} };
+    if (!state.images[data.competition]) state.images[data.competition] = {};
+    if (data.imageUrl) {
+      state.images[data.competition][data.itemNumber.toString()] = data.imageUrl;
+    } else {
+      delete state.images[data.competition][data.itemNumber.toString()];
+    }
+    renderAdminUI();
+  });
+
   socket.on('scores-reset', () => loadState());
 }
 
@@ -537,4 +639,7 @@ window.navigateNumber = navigateNumber;
 window.toggleVoting = toggleVoting;
 window.updateTotalItems = updateTotalItems;
 window.confirmResetScores = confirmResetScores;
+window.triggerImageUpload = triggerImageUpload;
+window.handleFileSelected = handleFileSelected;
+window.removeCurrentImage = removeCurrentImage;
 window.adminLogout = adminLogout;

@@ -134,6 +134,44 @@
             <span class="text-xs text-amber-400 font-bold block mt-1" id="activeNumberSubtext">Flag Design #01</span>
           </div>
 
+          <!-- Optional Artwork Upload Container -->
+          <div class="my-3 p-3 bg-slate-950/60 border border-slate-800 rounded-2xl">
+            <!-- When Image Exists -->
+            <div id="adminImagePreviewBox" class="hidden flex items-center justify-between space-x-3">
+              <div class="flex items-center space-x-3 overflow-hidden">
+                <img id="adminThumbnailImg" src="" alt="Thumbnail" class="w-14 h-14 object-contain rounded-xl bg-slate-900 border border-slate-700 flex-shrink-0">
+                <div class="truncate text-left">
+                  <span class="text-[10px] font-bold text-emerald-400 flex items-center space-x-1">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>Artwork Attached</span>
+                  </span>
+                  <span class="text-xs text-slate-300 font-semibold block truncate" id="adminImageFilename">artwork.png</span>
+                  <span class="text-[10px] text-slate-500 block">Shown on Projector & Phones</span>
+                </div>
+              </div>
+              <div class="flex items-center space-x-1.5 flex-shrink-0">
+                <button type="button" onclick="triggerImageUpload()" class="p-2 bg-slate-800 hover:bg-slate-700 text-blue-400 hover:text-white rounded-xl text-xs transition-colors" title="Replace Artwork">
+                  <i class="fa-solid fa-arrows-rotate"></i>
+                </button>
+                <button type="button" onclick="removeCurrentImage()" class="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl text-xs transition-colors" title="Remove Artwork">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- When NO Image Exists -->
+            <div id="adminImageUploadPrompt" class="text-center py-1">
+              <button type="button" onclick="triggerImageUpload()" class="w-full py-2.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-semibold border border-dashed border-slate-700 hover:border-slate-500 transition-all flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-cloud-arrow-up text-amber-400"></i>
+                <span>Upload Artwork Image (Optional)</span>
+              </button>
+              <p class="text-[10px] text-slate-500 mt-1">If uploaded, artwork will be displayed on Projector & Judges' phones</p>
+            </div>
+
+            <!-- Hidden File Input -->
+            <input type="file" id="adminFileInput" accept="image/*" class="hidden" onchange="handleFileSelected(this)">
+          </div>
+
           <!-- Quick Number Selector -->
           <div class="my-4">
             <label class="block text-xs font-bold text-slate-400 mb-1.5">Select Design Number (1 to 15):</label>

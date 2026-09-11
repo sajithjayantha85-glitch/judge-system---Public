@@ -4,6 +4,7 @@ const { Server } = require('socket.io');
 const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
+const multer = require('multer');
 
 const defaultData = require('./data/defaultData');
 
@@ -16,8 +17,35 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = path.join(__dirname, 'data');
 const STORE_PATH = path.join(DATA_DIR, 'store.json');
+const UPLOADS_DIR = path.join(__dirname, 'public', 'uploads');
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+
+// Multer Storage Configuration
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, UPLOADS_DIR);
+  },
+  filename: (req, file, cb) => {
+    const comp = req.body.competition || 'item';
+    const num = req.body.itemNumber || '0';
+    const ext = path.extname(file.originalname).toLowerCase() || '.png';
+    cb(null, `${comp}-${num}-${Date.now()}${ext}`);
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 15 * 1024 * 1024 }, // 15MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'), false);
+    }
+  }
+});
 
 // Load state from file or default
 let state;
@@ -45,6 +73,12 @@ try {
     if (!state.scores.stamps) {
       state.scores.stamps = {};
     }
+    if (!state.images) {
+      state.images = { flags: {}, emblems: {}, stamps: {} };
+    }
+    if (!state.images.flags) state.images.flags = {};
+    if (!state.images.emblems) state.images.emblems = {};
+    if (!state.images.stamps) state.images.stamps = {};
   } else {
     state = JSON.parse(JSON.stringify(defaultData));
     fs.writeFileSync(STORE_PATH, JSON.stringify(state, null, 2), 'utf-8');
@@ -76,6 +110,7 @@ app.get('/api/state', (req, res) => {
     votingOpen: state.votingOpen,
     totalItems: state.totalItems,
     scores: state.scores,
+    images: state.images || { flags: {}, emblems: {}, stamps: {} },
     judges: state.judges.map(j => ({ id: j.id, name: j.name })) // exclude PIN
   });
 });
@@ -221,6 +256,78 @@ app.post('/api/admin/reset-scores', checkAdminAuth, (req, res) => {
 
   io.emit('scores-reset', { competition });
   res.json({ success: true });
+});
+
+// Admin: Upload Artwork Image for a Design Number (Protected)
+app.post('/api/admin/upload-image', checkAdminAuth, upload.single('image'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No image file uploaded' });
+    }
+    const { competition, itemNumber } = req.body;
+    const num = parseInt(itemNumber, 10);
+    if (!competition || isNaN(num) || num < 1) {
+      return res.status(400).json({ success: false, message: 'Invalid competition or item number' });
+    }
+
+    if (!state.images) state.images = { flags: {}, emblems: {}, stamps: {} };
+    if (!state.images[competition]) state.images[competition] = {};
+
+    // Remove previous file if exists
+    const oldImageUrl = state.images[competition][num.toString()];
+    if (oldImageUrl) {
+      const oldFilePath = path.join(__dirname, 'public', oldImageUrl.replace(/^\//, ''));
+      if (fs.existsSync(oldFilePath)) {
+        try { fs.unlinkSync(oldFilePath); } catch (e) { /* ignore */ }
+      }
+    }
+
+    const relativeUrl = `/uploads/${req.file.filename}`;
+    state.images[competition][num.toString()] = relativeUrl;
+    saveState();
+
+    // Broadcast update to display, judge phones, and admin
+    io.emit('item-image-updated', {
+      competition,
+      itemNumber: num,
+      imageUrl: relativeUrl
+    });
+
+    res.json({ success: true, imageUrl: relativeUrl, competition, itemNumber: num });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Admin: Remove Artwork Image for a Design Number (Protected)
+app.post('/api/admin/remove-image', checkAdminAuth, (req, res) => {
+  try {
+    const { competition, itemNumber } = req.body;
+    const num = parseInt(itemNumber, 10);
+    if (!competition || isNaN(num) || num < 1) {
+      return res.status(400).json({ success: false, message: 'Invalid competition or item number' });
+    }
+
+    if (state.images && state.images[competition] && state.images[competition][num.toString()]) {
+      const oldImageUrl = state.images[competition][num.toString()];
+      const oldFilePath = path.join(__dirname, 'public', oldImageUrl.replace(/^\//, ''));
+      if (fs.existsSync(oldFilePath)) {
+        try { fs.unlinkSync(oldFilePath); } catch (e) { /* ignore */ }
+      }
+      delete state.images[competition][num.toString()];
+      saveState();
+    }
+
+    io.emit('item-image-updated', {
+      competition,
+      itemNumber: num,
+      imageUrl: null
+    });
+
+    res.json({ success: true, competition, itemNumber: num });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 // Export CSV of Results

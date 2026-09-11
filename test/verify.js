@@ -128,7 +128,65 @@ async function testServer() {
     }
     console.log('✅ Stamps CSV Export verified (with Stamp #01 label)');
 
-    console.log('\n🎉 ALL TESTS PASSED! Flags (15), Emblems (15), and Commemorative Stamps (15) fully operational!');
+    // 8. Test Artwork Image Upload & Removal
+    console.log('8. Testing Artwork Image Upload for Flag Design #01...');
+    const boundary = '--------------------------' + Date.now().toString(16);
+    const pngData = Buffer.from('89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000a49444154789c63000100000500010d0a2db40000000049454e44ae426082', 'hex');
+    
+    let multipartParts = '';
+    multipartParts += `--${boundary}\r\nContent-Disposition: form-data; name="competition"\r\n\r\nflags\r\n`;
+    multipartParts += `--${boundary}\r\nContent-Disposition: form-data; name="itemNumber"\r\n\r\n1\r\n`;
+    multipartParts += `--${boundary}\r\nContent-Disposition: form-data; name="image"; filename="test_flag.png"\r\nContent-Type: image/png\r\n\r\n`;
+    
+    const multipartBody = Buffer.concat([
+      Buffer.from(multipartParts, 'utf-8'),
+      pngData,
+      Buffer.from(`\r\n--${boundary}--\r\n`, 'utf-8')
+    ]);
+
+    const uploadRes = await request('/api/admin/upload-image', {
+      method: 'POST',
+      headers: {
+        'Content-Type': `multipart/form-data; boundary=${boundary}`,
+        'Content-Length': multipartBody.length,
+        'x-admin-password': 'admin2026'
+      },
+      body: multipartBody
+    });
+
+    if (uploadRes.status !== 200 || !uploadRes.body.success || !uploadRes.body.imageUrl) {
+      throw new Error(`Upload image failed: ${JSON.stringify(uploadRes.body)}`);
+    }
+    const uploadedUrl = uploadRes.body.imageUrl;
+    console.log(`✅ Artwork image uploaded successfully (${uploadedUrl})`);
+
+    // Verify static asset serving
+    const staticRes = await request(uploadedUrl);
+    if (staticRes.status !== 200) throw new Error(`Failed to fetch uploaded static file at ${uploadedUrl}`);
+    console.log('✅ Uploaded image verified via static file serving');
+
+    // Test Image Removal
+    console.log('8.1 Testing Artwork Image Removal...');
+    const removeRes = await request('/api/admin/remove-image', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-password': 'admin2026'
+      },
+      body: JSON.stringify({ competition: 'flags', itemNumber: 1 })
+    });
+    if (removeRes.status !== 200 || !removeRes.body.success) {
+      throw new Error(`Remove image failed: ${JSON.stringify(removeRes.body)}`);
+    }
+
+    // Verify state removed image
+    const finalStateRes = await request('/api/state');
+    if (finalStateRes.body.images && finalStateRes.body.images.flags && finalStateRes.body.images.flags['1']) {
+      throw new Error('Image still exists in state after removal');
+    }
+    console.log('✅ Artwork image removed and state updated properly');
+
+    console.log('\n🎉 ALL TESTS PASSED! Flags (15), Emblems (15), Stamps (15), and Artwork Image Uploading fully operational!');
     server.close(() => process.exit(0));
   } catch (err) {
     console.error('❌ Test failed:', err.message);

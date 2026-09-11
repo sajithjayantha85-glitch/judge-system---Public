@@ -125,6 +125,20 @@ function renderJudgeView() {
   document.getElementById('activeNumberDigits').textContent = formattedNum;
   document.getElementById('activeItemNumberDisplay').textContent = numText;
 
+  // Artwork Image handling for mobile judges
+  const compImages = (state.images && state.images[comp]) || {};
+  const currentImgUrl = compImages[num.toString()];
+  const imgWrapper = document.getElementById('judgeImageWrapper');
+  const judgeImg = document.getElementById('judgeActiveImage');
+
+  if (currentImgUrl) {
+    if (judgeImg) judgeImg.src = currentImgUrl;
+    if (imgWrapper) imgWrapper.classList.remove('hidden');
+  } else {
+    if (judgeImg) judgeImg.src = '';
+    if (imgWrapper) imgWrapper.classList.add('hidden');
+  }
+
   // Check if judge already scored this active item
   const compScores = (state.scores && state.scores[comp]) || {};
   const itemScores = compScores[num.toString()] || {};
@@ -150,6 +164,28 @@ function renderJudgeView() {
     // 3. Voting is closed / waiting for admin
     cardClosed.classList.remove('hidden');
   }
+}
+
+function openJudgeImageModal() {
+  if (!state) return;
+  const comp = state.activeCompetition;
+  const num = state.activeItemNumber;
+  const compImages = (state.images && state.images[comp]) || {};
+  const currentImgUrl = compImages[num.toString()];
+  if (!currentImgUrl) return;
+
+  let prefix = 'Flag';
+  if (comp === 'emblems') prefix = 'Emblem';
+  else if (comp === 'stamps') prefix = 'Stamp';
+
+  document.getElementById('zoomModalTitle').textContent = `${prefix} Design #${num < 10 ? '0' + num : num} Full Artwork`;
+  document.getElementById('zoomModalImg').src = currentImgUrl;
+  document.getElementById('judgeZoomModal').classList.remove('hidden');
+}
+
+function closeJudgeImageModal() {
+  const modal = document.getElementById('judgeZoomModal');
+  if (modal) modal.classList.add('hidden');
 }
 
 // 1-Click Score Submission
@@ -211,5 +247,20 @@ function setupSocketListeners() {
     }
   });
 
+  socket.on('item-image-updated', (data) => {
+    if (!state.images) state.images = { flags: {}, emblems: {}, stamps: {} };
+    if (!state.images[data.competition]) state.images[data.competition] = {};
+    if (data.imageUrl) {
+      state.images[data.competition][data.itemNumber.toString()] = data.imageUrl;
+    } else {
+      delete state.images[data.competition][data.itemNumber.toString()];
+    }
+    renderJudgeView();
+  });
+
   socket.on('scores-reset', () => loadState());
 }
+
+window.submitScore = submitScore;
+window.openJudgeImageModal = openJudgeImageModal;
+window.closeJudgeImageModal = closeJudgeImageModal;

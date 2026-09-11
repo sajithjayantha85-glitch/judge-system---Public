@@ -219,29 +219,21 @@
     }
   },
   "scores": {
-    "flags": {
-      "1": {
-        "1": {
-          "score": 10,
-          "submittedAt": "2026-09-11T17:16:04.696Z"
-        }
-      }
-    },
+    "flags": {},
     "emblems": {},
-    "stamps": {
-      "1": {
-        "2": {
-          "score": 9,
-          "submittedAt": "2026-09-11T17:16:04.707Z"
-        }
-      }
-    }
+    "stamps": {}
   },
+  "activeCompetition": "flags",
   "activeItemNumber": 1,
-  "votingOpen": true,
+  "votingOpen": false,
   "totalItems": {
     "flags": 15,
     "emblems": 15,
     "stamps": 15
+  },
+  "images": {
+    "flags": {},
+    "emblems": {},
+    "stamps": {}
   }
 }

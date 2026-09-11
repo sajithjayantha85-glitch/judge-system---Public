@@ -61,21 +61,31 @@ function renderDisplay() {
   let compTagHtml = '<i class="fa-solid fa-flag mr-1"></i> Flag Competition';
   let compPrefix = 'Flag';
 
+  const compPill = document.getElementById('dispCompPill');
+
   if (comp === 'flags') {
     compTitleText = 'Flag Competition (15 Flags)';
     compTagHtml = '<i class="fa-solid fa-flag mr-1"></i> Flag Competition';
     compPrefix = 'Flag';
     if (iconBox) iconBox.className = 'w-12 h-12 rounded-2xl bg-amber-500/20 border-amber-500/40 text-amber-400 border flex items-center justify-center text-2xl font-bold';
-    if (stageBox) stageBox.className = 'relative my-4 w-full max-w-2xl bg-gradient-to-b from-slate-950 to-slate-900 border-4 border-amber-500/60 rounded-3xl py-10 px-8 flex flex-col items-center justify-center shadow-2xl shadow-amber-500/15';
-    compTag.className = 'text-xs font-bold text-amber-400 bg-amber-500/15 border border-amber-500/30 px-3.5 py-1 rounded-full uppercase tracking-wider';
+    if (stageBox) stageBox.className = 'relative my-4 w-full max-w-2xl bg-gradient-to-b from-slate-950 to-slate-900 border-4 border-amber-500/60 rounded-3xl py-8 px-8 flex flex-col items-center justify-center shadow-2xl shadow-amber-500/15 transition-colors';
+    if (compTag) compTag.className = 'text-xs font-bold text-amber-400 bg-amber-500/15 border border-amber-500/30 px-3.5 py-1 rounded-full uppercase tracking-wider';
+    if (compPill) {
+      compPill.className = 'text-xs font-black uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30 px-4 py-1.5 rounded-full inline-block';
+      compPill.innerHTML = compTagHtml;
+    }
     itemSubtext.className = 'text-base font-extrabold text-amber-400 bg-amber-500/10 px-5 py-1.5 rounded-xl border border-amber-500/20';
   } else if (comp === 'emblems') {
     compTitleText = 'Emblem Competition (15 Emblems)';
     compTagHtml = '<i class="fa-solid fa-shield-halved mr-1"></i> Emblem Competition';
     compPrefix = 'Emblem';
     if (iconBox) iconBox.className = 'w-12 h-12 rounded-2xl bg-cyan-500/20 border-cyan-500/40 text-cyan-400 border flex items-center justify-center text-2xl font-bold';
-    if (stageBox) stageBox.className = 'relative my-4 w-full max-w-2xl bg-gradient-to-b from-slate-950 to-slate-900 border-4 border-cyan-500/60 rounded-3xl py-10 px-8 flex flex-col items-center justify-center shadow-2xl shadow-cyan-500/15';
-    compTag.className = 'text-xs font-bold text-cyan-400 bg-cyan-500/15 border border-cyan-500/30 px-3.5 py-1 rounded-full uppercase tracking-wider';
+    if (stageBox) stageBox.className = 'relative my-4 w-full max-w-2xl bg-gradient-to-b from-slate-950 to-slate-900 border-4 border-cyan-500/60 rounded-3xl py-8 px-8 flex flex-col items-center justify-center shadow-2xl shadow-cyan-500/15 transition-colors';
+    if (compTag) compTag.className = 'text-xs font-bold text-cyan-400 bg-cyan-500/15 border border-cyan-500/30 px-3.5 py-1 rounded-full uppercase tracking-wider';
+    if (compPill) {
+      compPill.className = 'text-xs font-black uppercase tracking-wider bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 px-4 py-1.5 rounded-full inline-block';
+      compPill.innerHTML = compTagHtml;
+    }
     itemSubtext.className = 'text-base font-extrabold text-cyan-400 bg-cyan-500/10 px-5 py-1.5 rounded-xl border border-cyan-500/20';
   } else {
     // stamps
@@ -83,8 +93,12 @@ function renderDisplay() {
     compTagHtml = '<i class="fa-solid fa-stamp mr-1"></i> Commemorative Stamp Selection';
     compPrefix = 'Stamp';
     if (iconBox) iconBox.className = 'w-12 h-12 rounded-2xl bg-purple-500/20 border-purple-500/40 text-purple-400 border flex items-center justify-center text-2xl font-bold';
-    if (stageBox) stageBox.className = 'relative my-4 w-full max-w-2xl bg-gradient-to-b from-slate-950 to-slate-900 border-4 border-purple-500/60 rounded-3xl py-10 px-8 flex flex-col items-center justify-center shadow-2xl shadow-purple-500/15';
-    compTag.className = 'text-xs font-bold text-purple-400 bg-purple-500/15 border border-purple-500/30 px-3.5 py-1 rounded-full uppercase tracking-wider';
+    if (stageBox) stageBox.className = 'relative my-4 w-full max-w-2xl bg-gradient-to-b from-slate-950 to-slate-900 border-4 border-purple-500/60 rounded-3xl py-8 px-8 flex flex-col items-center justify-center shadow-2xl shadow-purple-500/15 transition-colors';
+    if (compTag) compTag.className = 'text-xs font-bold text-purple-400 bg-purple-500/15 border border-purple-500/30 px-3.5 py-1 rounded-full uppercase tracking-wider';
+    if (compPill) {
+      compPill.className = 'text-xs font-black uppercase tracking-wider bg-purple-500/15 text-purple-400 border border-purple-500/30 px-4 py-1.5 rounded-full inline-block';
+      compPill.innerHTML = compTagHtml;
+    }
     itemSubtext.className = 'text-base font-extrabold text-purple-400 bg-purple-500/10 px-5 py-1.5 rounded-xl border border-purple-500/20';
   }
 
@@ -99,8 +113,26 @@ function renderDisplay() {
   }
 
   document.getElementById('dispCompTitle').textContent = compTitleText;
-  compTag.innerHTML = compTagHtml;
-  document.getElementById('dispGiantNumber').textContent = formattedNum;
+  if (compTag) compTag.innerHTML = compTagHtml;
+
+  // Artwork Image handling
+  const imgWrapper = document.getElementById('dispImageWrapper');
+  const activeImg = document.getElementById('dispActiveImage');
+  const giantNumber = document.getElementById('dispGiantNumber');
+  const compImages = (state.images && state.images[comp]) || {};
+  const currentImgUrl = compImages[num.toString()];
+
+  if (currentImgUrl) {
+    if (activeImg) activeImg.src = currentImgUrl;
+    if (imgWrapper) imgWrapper.classList.remove('hidden');
+    if (giantNumber) giantNumber.className = 'text-7xl font-black text-white my-1 tracking-tight drop-shadow-2xl';
+  } else {
+    if (activeImg) activeImg.src = '';
+    if (imgWrapper) imgWrapper.classList.add('hidden');
+    if (giantNumber) giantNumber.className = 'text-9xl font-black text-white my-2 tracking-tight drop-shadow-2xl';
+  }
+
+  giantNumber.textContent = formattedNum;
   itemSubtext.textContent = `${compPrefix} Design #${formattedNum}`;
 
   // 20 Judges Submission Progress
@@ -173,6 +205,7 @@ function renderPodium() {
   const container = document.getElementById('podiumContainer');
   container.innerHTML = '';
 
+  const compImages = (state.images && state.images[comp]) || {};
   const first = results[0];
   const second = results[1];
   const third = results[2];
@@ -180,10 +213,14 @@ function renderPodium() {
   // 2nd Place (Silver)
   if (second) {
     const label = `${compPrefix} #${second.number < 10 ? '0' + second.number : second.number}`;
+    const imgHtml = compImages[second.number.toString()]
+      ? `<img src="${compImages[second.number.toString()]}" class="w-16 h-16 object-contain rounded-2xl bg-slate-950/80 border border-slate-500/40 p-1 my-2 shadow-lg">`
+      : '';
     container.innerHTML += `
       <div class="order-2 md:order-1 bg-slate-900/90 border-2 border-slate-400 rounded-3xl p-6 text-center flex flex-col items-center silver-glow">
         <div class="w-12 h-12 rounded-full bg-slate-300 text-slate-950 font-black text-xl flex items-center justify-center -mt-10 shadow-lg">2</div>
-        <div class="my-5">
+        ${imgHtml}
+        <div class="my-4">
           <span class="text-xs text-slate-400 font-bold block uppercase tracking-wider">2nd Place (Silver)</span>
           <h3 class="text-3xl font-black text-white mt-1">${label}</h3>
         </div>
@@ -196,12 +233,16 @@ function renderPodium() {
   // 1st Place (Gold)
   if (first) {
     const label = `${compPrefix} #${first.number < 10 ? '0' + first.number : first.number}`;
+    const imgHtml = compImages[first.number.toString()]
+      ? `<img src="${compImages[first.number.toString()]}" class="w-20 h-20 object-contain rounded-2xl bg-slate-950/80 border border-amber-400/40 p-1 my-2 shadow-xl">`
+      : '';
     container.innerHTML += `
       <div class="order-1 md:order-2 bg-slate-900/90 border-2 border-amber-400 rounded-3xl p-8 text-center flex flex-col items-center gold-glow transform md:-translate-y-4">
         <div class="w-16 h-16 rounded-full bg-amber-400 text-slate-950 font-black text-2xl flex items-center justify-center -mt-14 shadow-2xl">
           <i class="fa-solid fa-crown text-2xl"></i>
         </div>
-        <div class="my-6">
+        ${imgHtml}
+        <div class="my-5">
           <span class="text-xs text-amber-400 font-bold block uppercase tracking-wider">1st Place (Winner)</span>
           <h3 class="text-4xl font-black text-white mt-1">${label}</h3>
         </div>
@@ -214,10 +255,14 @@ function renderPodium() {
   // 3rd Place (Bronze)
   if (third) {
     const label = `${compPrefix} #${third.number < 10 ? '0' + third.number : third.number}`;
+    const imgHtml = compImages[third.number.toString()]
+      ? `<img src="${compImages[third.number.toString()]}" class="w-16 h-16 object-contain rounded-2xl bg-slate-950/80 border border-amber-700/40 p-1 my-2 shadow-lg">`
+      : '';
     container.innerHTML += `
       <div class="order-3 md:order-3 bg-slate-900/90 border-2 border-amber-700 rounded-3xl p-6 text-center flex flex-col items-center bronze-glow">
         <div class="w-12 h-12 rounded-full bg-amber-700 text-white font-black text-xl flex items-center justify-center -mt-10 shadow-lg">3</div>
-        <div class="my-5">
+        ${imgHtml}
+        <div class="my-4">
           <span class="text-xs text-amber-600 font-bold block uppercase tracking-wider">3rd Place (Bronze)</span>
           <h3 class="text-3xl font-black text-white mt-1">${label}</h3>
         </div>
@@ -232,7 +277,7 @@ function renderPodium() {
   otherList.innerHTML = '';
   if (results.length > 3) {
     results.slice(3).forEach((r, idx) => {
-      const label = `${isFlags ? 'Flag' : 'Emblem'} #${r.number < 10 ? '0' + r.number : r.number}`;
+      const label = `${compPrefix} #${r.number < 10 ? '0' + r.number : r.number}`;
       const row = document.createElement('div');
       row.className = 'bg-slate-900 border border-slate-800 rounded-2xl px-5 py-3 flex items-center justify-between text-xs';
       row.innerHTML = `
@@ -278,6 +323,17 @@ function setupSocketListeners() {
 
   socket.on('total-items-changed', (data) => {
     state.totalItems = data.totalItems;
+    renderDisplay();
+  });
+
+  socket.on('item-image-updated', (data) => {
+    if (!state.images) state.images = { flags: {}, emblems: {}, stamps: {} };
+    if (!state.images[data.competition]) state.images[data.competition] = {};
+    if (data.imageUrl) {
+      state.images[data.competition][data.itemNumber.toString()] = data.imageUrl;
+    } else {
+      delete state.images[data.competition][data.itemNumber.toString()];
+    }
     renderDisplay();
   });
 
