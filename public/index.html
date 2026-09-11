@@ -118,55 +118,29 @@
 
     </div>
 
-    <!-- 20 JUDGES QUICK TEST ACCESS (DIRECT LOGIN LINKS) -->
-    <div class="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 mb-10">
-      <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <div>
-          <h4 class="text-sm font-bold text-white flex items-center space-x-2">
-            <i class="fa-solid fa-users text-amber-400"></i>
-            <span>Judge Accounts (Direct 1-Click Access for Testing)</span>
-          </h4>
-          <p class="text-xs text-slate-400 mt-0.5">Click any judge profile below to test mobile scoring directly:</p>
-        </div>
-      </div>
-
-      <!-- Grid of 20 Judge Buttons -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-10 gap-2 text-center" id="judgesQuickGrid">
-        <!-- Generated Judge 01 to 20 -->
-      </div>
-    </div>
-
-    <!-- SECONDARY LINKS: PROJECTOR & PRINTABLE CARDS -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-
-      <!-- Display / Projector -->
-      <a href="/display.html" target="_blank" class="group bg-slate-900/80 border border-slate-800 hover:border-emerald-500/40 rounded-2xl p-5 flex items-center justify-between transition-all">
+    <!-- HALL PROJECTOR SCREEN CARD -->
+    <div class="bg-slate-900/80 border border-slate-800 hover:border-emerald-500/40 rounded-3xl p-6 transition-all mb-4">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div class="flex items-center space-x-4">
-          <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-xl group-hover:scale-105 transition-transform">
+          <div class="w-14 h-14 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-2xl flex-shrink-0 border border-emerald-500/20">
             <i class="fa-solid fa-tv"></i>
           </div>
           <div>
-            <h4 class="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors">Hall Projector Screen</h4>
-            <p class="text-xs text-slate-400">Giant active number display & live submission status</p>
+            <div class="flex items-center space-x-2">
+              <h4 class="text-base font-bold text-white">Hall Projector Big Screen</h4>
+              <span class="text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded">Live Sync</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">
+              Display active design number (01 to 15), real-time voting progress, and winner ceremony on the auditorium projector.
+            </p>
           </div>
         </div>
-        <i class="fa-solid fa-arrow-up-right-from-square text-slate-500 group-hover:text-emerald-400 transition-colors"></i>
-      </a>
 
-      <!-- QR Cards Print -->
-      <a href="/qr-sheet.html" class="group bg-slate-900/80 border border-slate-800 hover:border-purple-500/40 rounded-2xl p-5 flex items-center justify-between transition-all">
-        <div class="flex items-center space-x-4">
-          <div class="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-xl group-hover:scale-105 transition-transform">
-            <i class="fa-solid fa-print"></i>
-          </div>
-          <div>
-            <h4 class="text-sm font-bold text-white group-hover:text-purple-400 transition-colors">Printable Judge QR Cards</h4>
-            <p class="text-xs text-slate-400">Printable desk cards with unique QR codes for all 20 judges</p>
-          </div>
-        </div>
-        <i class="fa-solid fa-arrow-right text-slate-500 group-hover:text-purple-400 transition-colors"></i>
-      </a>
-
+        <a href="/display.html" target="_blank" class="px-6 py-3.5 bg-slate-800 hover:bg-emerald-600 hover:text-slate-950 text-white font-bold rounded-2xl text-xs flex items-center space-x-2 border border-slate-700 transition-all flex-shrink-0 shadow-lg">
+          <span>Open Projector Screen</span>
+          <i class="fa-solid fa-arrow-up-right-from-square text-[11px]"></i>
+        </a>
+      </div>
     </div>
 
   </main>
@@ -175,19 +149,5 @@
   <footer class="border-t border-slate-900 py-4 text-center text-xs text-slate-500">
     Department of Examinations, Sri Lanka • Official Flag & Emblem Judging System • Cloud Ready
   </footer>
-
-  <script>
-    // Generate 20 Judge Quick Test Buttons
-    const grid = document.getElementById('judgesQuickGrid');
-    for (let i = 1; i <= 20; i++) {
-      const pin = (1000 + i).toString();
-      const numStr = i < 10 ? '0' + i : i;
-      const a = document.createElement('a');
-      a.href = `/judge.html?judge=${i}&pin=${pin}`;
-      a.className = 'p-2 bg-slate-800 hover:bg-amber-500 hover:text-slate-950 border border-slate-700 rounded-xl text-xs font-bold text-slate-300 transition-all block truncate';
-      a.innerHTML = `<div>Judge ${numStr}</div><div class="text-[9px] text-slate-400 font-mono">PIN: ${pin}</div>`;
-      grid.appendChild(a);
-    }
-  </script>
 </body>
 </html>

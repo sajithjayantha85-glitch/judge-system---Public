@@ -20,6 +20,41 @@
 </head>
 <body class="p-6">
 
+  <!-- ================= ADMIN AUTHENTICATION SCREEN (NO-PRINT) ================= -->
+  <div id="authScreen" class="no-print fixed inset-0 z-50 bg-slate-950 flex flex-col justify-center items-center px-6">
+    <div class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-3xl p-7 shadow-2xl">
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 rounded-2xl bg-purple-500/15 border border-purple-500/30 text-purple-400 flex items-center justify-center text-3xl mx-auto mb-3 shadow-lg shadow-purple-500/10">
+          <i class="fa-solid fa-lock"></i>
+        </div>
+        <span class="text-[10px] font-bold uppercase tracking-wider text-purple-400 bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/20">Confidential Cards</span>
+        <h2 class="text-xl font-black text-white mt-2">Admin Authentication</h2>
+        <p class="text-xs text-slate-400 mt-1">Enter Admin Password to view confidential judge cards</p>
+      </div>
+
+      <form id="qrLoginForm" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1.5">Admin Password</label>
+          <input type="password" id="qrPasswordInput" placeholder="Enter Admin Password" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-center text-base font-bold focus:outline-none focus:border-purple-500 placeholder:text-slate-500 placeholder:text-xs">
+        </div>
+
+        <div id="qrLoginError" class="hidden text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-2.5 rounded-xl text-center"></div>
+
+        <button type="submit" class="w-full py-3.5 bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-white font-extrabold rounded-xl shadow-lg shadow-purple-600/25 transition-all">
+          Unlock Printable QR Cards
+        </button>
+      </form>
+
+      <div class="mt-4 flex items-center justify-center space-x-4 text-xs text-slate-500">
+        <a href="/admin.html" class="hover:text-purple-400 transition-colors">
+          <i class="fa-solid fa-arrow-left mr-1"></i> Admin Panel
+        </a>
+        <span>•</span>
+        <a href="/" class="hover:text-slate-400 transition-colors">Home</a>
+      </div>
+    </div>
+  </div>
+
   <!-- No-Print Control Header -->
   <div class="no-print max-w-5xl mx-auto mb-8 bg-slate-900 text-white p-6 rounded-3xl shadow-xl flex flex-wrap items-center justify-between gap-4">
     <div>
@@ -41,12 +76,13 @@
         <i class="fa-solid fa-print"></i>
         <span>Print A4 Sheet</span>
       </button>
+      <a href="/admin.html" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-sm border border-slate-700 transition-colors flex items-center space-x-1.5">
+        <i class="fa-solid fa-shield-halved text-purple-400"></i>
+        <span>Admin Panel</span>
+      </a>
       <a href="/" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-sm border border-slate-700 transition-colors flex items-center space-x-1.5">
         <i class="fa-solid fa-house"></i>
         <span>Home</span>
-      </a>
-      <a href="/admin.html" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-sm border border-slate-700 transition-colors">
-        Admin Panel
       </a>
     </div>
   </div>
@@ -58,12 +94,57 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
-      try {
-        const res = await fetch('/api/state');
-        const state = await res.json();
-        renderCards(state.judges || []);
-      } catch (err) {
-        console.error('Error loading judges:', err);
+      const form = document.getElementById('qrLoginForm');
+      const input = document.getElementById('qrPasswordInput');
+      const errBox = document.getElementById('qrLoginError');
+      const authScreen = document.getElementById('authScreen');
+
+      async function verifyAndLoad(pwd) {
+        try {
+          const res = await fetch('/api/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: pwd })
+          });
+          const data = await res.json();
+          if (data.success) {
+            sessionStorage.setItem('adminPassword', pwd);
+            authScreen.classList.add('hidden');
+            const stateRes = await fetch('/api/state');
+            const state = await stateRes.json();
+            renderCards(state.judges || []);
+            return true;
+          } else {
+            sessionStorage.removeItem('adminPassword');
+            errBox.textContent = data.message || 'Invalid Admin Password';
+            errBox.classList.remove('hidden');
+            authScreen.classList.remove('hidden');
+            return false;
+          }
+        } catch (e) {
+          errBox.textContent = 'Connection error';
+          errBox.classList.remove('hidden');
+          return false;
+        }
+      }
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const pwd = input.value.trim();
+        if (!pwd) {
+          errBox.textContent = 'Please enter admin password';
+          errBox.classList.remove('hidden');
+          return;
+        }
+        verifyAndLoad(pwd);
+      });
+
+      // Auto check if already authenticated via admin panel session
+      const savedPwd = sessionStorage.getItem('adminPassword');
+      if (savedPwd) {
+        verifyAndLoad(savedPwd);
+      } else {
+        authScreen.classList.remove('hidden');
       }
     });
 

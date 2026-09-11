@@ -185,6 +185,28 @@ function renderAdminUI() {
 
   // 6. Render Results Table
   renderResultsTable();
+
+  // 7. Render Admin Quick Links Grid
+  renderAdminQuickGrid();
+}
+
+// Render Admin Quick Grid for Testing
+function renderAdminQuickGrid() {
+  const container = document.getElementById('adminJudgesQuickGrid');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const judges = state.judges || [];
+  judges.forEach(j => {
+    const pin = (1000 + j.id).toString();
+    const numStr = j.id < 10 ? '0' + j.id : j.id;
+    const a = document.createElement('a');
+    a.href = `/judge.html?judge=${j.id}&pin=${pin}`;
+    a.target = '_blank';
+    a.className = 'p-2 bg-slate-800/80 hover:bg-purple-600 hover:text-white border border-slate-700/80 rounded-xl text-xs font-bold text-slate-300 transition-all block truncate shadow-sm';
+    a.innerHTML = `<div>Judge ${numStr}</div><div class="text-[9px] text-slate-400 font-mono">PIN: ${pin}</div>`;
+    container.appendChild(a);
+  });
 }
 
 // 20 Judges Grid for Active Number
