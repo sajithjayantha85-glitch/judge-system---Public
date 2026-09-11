@@ -6,7 +6,8 @@ module.exports = {
   adminPassword: process.env.ADMIN_PASSWORD || 'admin2026',
   totalItems: {
     flags: 15,                // 15 Flags
-    emblems: 15               // 15 Emblems
+    emblems: 15,              // 15 Emblems
+    stamps: 15                // 15 Commemorative Stamps
   },
 
   // 20 Judges configuration
@@ -24,6 +25,7 @@ module.exports = {
   // scores[competition][itemNumber][judgeId] = { score: 8, submittedAt: ISOString }
   scores: {
     flags: {},
-    emblems: {}
+    emblems: {},
+    stamps: {}
   }
 };

@@ -103,17 +103,22 @@ function renderAdminUI() {
   const totalCount = (state.totalItems && state.totalItems[comp]) || 15;
   const formattedNum = num < 10 ? '0' + num : num;
 
-  // 1. Header Tabs & Badges (2 Distinct Colors: Amber Gold for Flags, Cyan Blue for Emblems)
+  // 1. Header Tabs & Badges (3 Distinct Colors: Amber Gold for Flags, Cyan Blue for Emblems, Royal Purple for Stamps)
   const tabFlags = document.getElementById('tabFlags');
   const tabEmblems = document.getElementById('tabEmblems');
+  const tabStamps = document.getElementById('tabStamps');
   const activeCompHeader = document.getElementById('activeCompHeader');
   const tableTitle = document.getElementById('tableTitle');
   const activeBoxFrame = document.getElementById('activeBoxFrame');
   const activeNumberSubtext = document.getElementById('activeNumberSubtext');
 
-  if (isFlags) {
-    tabFlags.className = 'px-3.5 py-1.5 rounded-lg text-xs font-black transition-all bg-amber-500 text-slate-950 shadow';
-    tabEmblems.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white';
+  const tabInactiveClass = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white';
+  let activeColorClass = 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30';
+
+  if (comp === 'flags') {
+    tabFlags.className = 'px-3 py-1.5 rounded-lg text-xs font-black transition-all bg-amber-500 text-slate-950 shadow';
+    tabEmblems.className = tabInactiveClass;
+    if (tabStamps) tabStamps.className = tabInactiveClass;
     activeCompHeader.className = 'text-xs font-black uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30 px-3 py-1 rounded-lg';
     activeCompHeader.innerHTML = '<i class="fa-solid fa-flag mr-1"></i> Flag Competition';
     tableTitle.textContent = 'Flag Competition Leaderboard & Results';
@@ -122,9 +127,11 @@ function renderAdminUI() {
       activeNumberSubtext.className = 'text-xs text-amber-400 font-bold block mt-1';
       activeNumberSubtext.textContent = `Flag Design #${formattedNum}`;
     }
-  } else {
-    tabEmblems.className = 'px-3.5 py-1.5 rounded-lg text-xs font-black transition-all bg-cyan-500 text-slate-950 shadow';
-    tabFlags.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white';
+    activeColorClass = 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30';
+  } else if (comp === 'emblems') {
+    tabEmblems.className = 'px-3 py-1.5 rounded-lg text-xs font-black transition-all bg-cyan-500 text-slate-950 shadow';
+    tabFlags.className = tabInactiveClass;
+    if (tabStamps) tabStamps.className = tabInactiveClass;
     activeCompHeader.className = 'text-xs font-black uppercase tracking-wider bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 px-3 py-1 rounded-lg';
     activeCompHeader.innerHTML = '<i class="fa-solid fa-shield-halved mr-1"></i> Emblem Competition';
     tableTitle.textContent = 'Emblem Competition Leaderboard & Results';
@@ -133,6 +140,21 @@ function renderAdminUI() {
       activeNumberSubtext.className = 'text-xs text-cyan-400 font-bold block mt-1';
       activeNumberSubtext.textContent = `Emblem Design #${formattedNum}`;
     }
+    activeColorClass = 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30';
+  } else {
+    // stamps
+    if (tabStamps) tabStamps.className = 'px-3 py-1.5 rounded-lg text-xs font-black transition-all bg-purple-500 text-white shadow';
+    tabFlags.className = tabInactiveClass;
+    tabEmblems.className = tabInactiveClass;
+    activeCompHeader.className = 'text-xs font-black uppercase tracking-wider bg-purple-500/15 text-purple-400 border border-purple-500/30 px-3 py-1 rounded-lg';
+    activeCompHeader.innerHTML = '<i class="fa-solid fa-stamp mr-1"></i> Commemorative Stamp Selection';
+    tableTitle.textContent = 'Commemorative Stamp Leaderboard & Results';
+    if (activeBoxFrame) activeBoxFrame.className = 'bg-slate-950 border-2 border-purple-500/40 rounded-2xl p-6 text-center my-3 transition-colors';
+    if (activeNumberSubtext) {
+      activeNumberSubtext.className = 'text-xs text-purple-400 font-bold block mt-1';
+      activeNumberSubtext.textContent = `Stamp Design #${formattedNum}`;
+    }
+    activeColorClass = 'bg-purple-500 text-white shadow-md shadow-purple-500/30';
   }
 
   // Update CSV export link
@@ -152,7 +174,6 @@ function renderAdminUI() {
     const isCurrent = i === num;
     const hasScores = compScores[i.toString()] && Object.keys(compScores[i.toString()]).length > 0;
     const btn = document.createElement('button');
-    const activeColorClass = isFlags ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30' : 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30';
     btn.className = `flex-shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center space-x-1 ${
       isCurrent 
         ? activeColorClass 
@@ -322,8 +343,17 @@ function renderResultsTable() {
       }
     });
 
-    const label = `${isFlags ? 'Flag' : 'Emblem'} #${row.number < 10 ? '0' + row.number : row.number}`;
-    const badgeColor = isFlags ? 'text-amber-400 border-amber-500/30' : 'text-cyan-400 border-cyan-500/30';
+    let compPrefix = 'Flag';
+    let badgeColor = 'text-amber-400 border-amber-500/30';
+    if (comp === 'emblems') {
+      compPrefix = 'Emblem';
+      badgeColor = 'text-cyan-400 border-cyan-500/30';
+    } else if (comp === 'stamps') {
+      compPrefix = 'Stamp';
+      badgeColor = 'text-purple-400 border-purple-500/30';
+    }
+
+    const label = `${compPrefix} #${row.number < 10 ? '0' + row.number : row.number}`;
 
     tr.innerHTML = `
       <td class="p-3 text-center">${rankBadge}</td>
@@ -442,7 +472,9 @@ async function updateTotalItems(count) {
 }
 
 async function confirmResetScores() {
-  const compName = state.activeCompetition === 'flags' ? 'Flag Competition' : 'Emblem Competition';
+  let compName = 'Flag Competition';
+  if (state.activeCompetition === 'emblems') compName = 'Emblem Competition';
+  else if (state.activeCompetition === 'stamps') compName = 'Commemorative Stamp Selection';
   if (confirm(`Are you sure you want to reset all scores for ${compName}? This cannot be undone.`)) {
     try {
       const res = await fetch('/api/admin/reset-scores', {

@@ -99,21 +99,27 @@ function renderJudgeView() {
   const compNameBadge = document.getElementById('compNameBadge');
   const votingOpenCard = document.getElementById('votingOpenCard');
   const activeBoxJudge = document.getElementById('activeBoxJudge');
-  const compLabel = isFlags ? 'Flag Competition (15 Flags)' : 'Emblem Competition (15 Emblems)';
   
-  if (isFlags) {
+  if (comp === 'flags') {
     compNameBadge.className = 'text-xs font-black px-3 py-1 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30';
     compNameBadge.innerHTML = '<i class="fa-solid fa-flag mr-1"></i> Flag Competition';
     votingOpenCard.className = 'hidden bg-slate-900 border-2 border-amber-500/50 rounded-3xl p-6 shadow-2xl text-center flex flex-col items-center';
     if (activeBoxJudge) activeBoxJudge.className = 'my-4 w-full bg-slate-950 border-2 border-amber-500/50 rounded-2xl py-5 px-6 flex flex-col items-center justify-center shadow-inner';
-  } else {
+    document.getElementById('activeCompLabel').textContent = 'Flag Competition (15 Flags)';
+  } else if (comp === 'emblems') {
     compNameBadge.className = 'text-xs font-black px-3 py-1 rounded-full bg-cyan-500/15 text-cyan-400 border border-cyan-500/30';
     compNameBadge.innerHTML = '<i class="fa-solid fa-shield-halved mr-1"></i> Emblem Competition';
     votingOpenCard.className = 'hidden bg-slate-900 border-2 border-cyan-500/50 rounded-3xl p-6 shadow-2xl text-center flex flex-col items-center';
     if (activeBoxJudge) activeBoxJudge.className = 'my-4 w-full bg-slate-950 border-2 border-cyan-500/50 rounded-2xl py-5 px-6 flex flex-col items-center justify-center shadow-inner';
+    document.getElementById('activeCompLabel').textContent = 'Emblem Competition (15 Emblems)';
+  } else {
+    // stamps
+    compNameBadge.className = 'text-xs font-black px-3 py-1 rounded-full bg-purple-500/15 text-purple-400 border border-purple-500/30';
+    compNameBadge.innerHTML = '<i class="fa-solid fa-stamp mr-1"></i> Commemorative Stamp Selection';
+    votingOpenCard.className = 'hidden bg-slate-900 border-2 border-purple-500/50 rounded-3xl p-6 shadow-2xl text-center flex flex-col items-center';
+    if (activeBoxJudge) activeBoxJudge.className = 'my-4 w-full bg-slate-950 border-2 border-purple-500/50 rounded-2xl py-5 px-6 flex flex-col items-center justify-center shadow-inner';
+    document.getElementById('activeCompLabel').textContent = 'Commemorative Stamp Selection (15 Stamps)';
   }
-
-  document.getElementById('activeCompLabel').textContent = compLabel;
 
   const numText = `Design #${formattedNum}`;
   document.getElementById('activeNumberDigits').textContent = formattedNum;

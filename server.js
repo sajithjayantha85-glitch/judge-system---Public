@@ -34,7 +34,16 @@ try {
       state.votingOpen = false;
     }
     if (!state.totalItems) {
-      state.totalItems = { flags: 10, emblems: 10 };
+      state.totalItems = { flags: 15, emblems: 15, stamps: 15 };
+    }
+    if (!state.totalItems.stamps) {
+      state.totalItems.stamps = 15;
+    }
+    if (!state.scores) {
+      state.scores = { flags: {}, emblems: {}, stamps: {} };
+    }
+    if (!state.scores.stamps) {
+      state.scores.stamps = {};
     }
   } else {
     state = JSON.parse(JSON.stringify(defaultData));
@@ -160,7 +169,7 @@ app.post('/api/score', (req, res) => {
 app.post('/api/admin/set-round', checkAdminAuth, (req, res) => {
   const { competition, itemNumber, votingOpen } = req.body;
 
-  if (competition && (competition === 'flags' || competition === 'emblems')) {
+  if (competition && (competition === 'flags' || competition === 'emblems' || competition === 'stamps')) {
     state.activeCompetition = competition;
   }
   if (typeof itemNumber === 'number' && itemNumber >= 1) {
@@ -186,7 +195,7 @@ app.post('/api/admin/set-round', checkAdminAuth, (req, res) => {
   });
 });
 
-// Admin: Update total number of items (flags/emblems) (Protected)
+// Admin: Update total number of items (flags/emblems/stamps) (Protected)
 app.post('/api/admin/set-total-items', checkAdminAuth, (req, res) => {
   const { competition, count } = req.body;
   const num = parseInt(count, 10);
@@ -204,7 +213,7 @@ app.post('/api/admin/set-total-items', checkAdminAuth, (req, res) => {
 app.post('/api/admin/reset-scores', checkAdminAuth, (req, res) => {
   const { competition } = req.body;
   if (competition === 'all') {
-    state.scores = { flags: {}, emblems: {} };
+    state.scores = { flags: {}, emblems: {}, stamps: {} };
   } else if (state.scores[competition]) {
     state.scores[competition] = {};
   }
@@ -219,7 +228,7 @@ app.get('/api/export/csv', (req, res) => {
   const competition = req.query.competition || state.activeCompetition;
   const compScores = state.scores[competition] || {};
   const judges = state.judges;
-  const totalCount = (state.totalItems && state.totalItems[competition]) || 10;
+  const totalCount = (state.totalItems && state.totalItems[competition]) || 15;
 
   let header = ['Rank', 'Design Number'];
   judges.forEach(j => header.push(j.name));
@@ -255,7 +264,11 @@ app.get('/api/export/csv', (req, res) => {
 
   let csv = header.join(',') + '\r\n';
   rows.forEach((r, idx) => {
-    const label = `${competition === 'flags' ? 'Flag' : 'Emblem'} #${r.number < 10 ? '0' + r.number : r.number}`;
+    let compLabel = 'Flag';
+    if (competition === 'emblems') compLabel = 'Emblem';
+    else if (competition === 'stamps') compLabel = 'Stamp';
+
+    const label = `${compLabel} #${r.number < 10 ? '0' + r.number : r.number}`;
     const line = [
       idx + 1,
       `"${label}"`,

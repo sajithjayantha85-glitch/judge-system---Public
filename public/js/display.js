@@ -24,8 +24,12 @@ function switchView(view) {
   const podiumBtn = document.getElementById('viewPodiumBtn');
   const liveView = document.getElementById('liveView');
   const podiumView = document.getElementById('podiumView');
-  const isFlags = state && state.activeCompetition === 'flags';
-  const activeColor = isFlags ? 'bg-amber-500 text-slate-950' : 'bg-cyan-500 text-slate-950';
+  let activeColor = 'bg-amber-500 text-slate-950';
+  if (state && state.activeCompetition === 'emblems') {
+    activeColor = 'bg-cyan-500 text-slate-950';
+  } else if (state && state.activeCompetition === 'stamps') {
+    activeColor = 'bg-purple-500 text-white';
+  }
 
   if (view === 'live') {
     liveBtn.className = `px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeColor} shadow-md`;
@@ -45,15 +49,43 @@ function renderDisplay() {
   if (!state) return;
 
   const comp = state.activeCompetition;
-  const isFlags = comp === 'flags';
   const num = state.activeItemNumber;
   const formattedNum = num < 10 ? '0' + num : num;
 
-  // Header Title & Icon
-  document.getElementById('dispCompTitle').textContent = isFlags ? 'Flag Competition (15 Flags)' : 'Emblem Competition (15 Emblems)';
   const iconBox = document.getElementById('dispHeaderIcon');
-  if (iconBox) {
-    iconBox.className = `w-12 h-12 rounded-2xl ${isFlags ? 'bg-amber-500/20 border-amber-500/40 text-amber-400' : 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400'} border flex items-center justify-center text-2xl font-bold`;
+  const stageBox = document.getElementById('dispStageBox');
+  const compTag = document.getElementById('dispCompTag');
+  const itemSubtext = document.getElementById('dispItemSubtext');
+
+  let compTitleText = 'Flag Competition (15 Flags)';
+  let compTagHtml = '<i class="fa-solid fa-flag mr-1"></i> Flag Competition';
+  let compPrefix = 'Flag';
+
+  if (comp === 'flags') {
+    compTitleText = 'Flag Competition (15 Flags)';
+    compTagHtml = '<i class="fa-solid fa-flag mr-1"></i> Flag Competition';
+    compPrefix = 'Flag';
+    if (iconBox) iconBox.className = 'w-12 h-12 rounded-2xl bg-amber-500/20 border-amber-500/40 text-amber-400 border flex items-center justify-center text-2xl font-bold';
+    if (stageBox) stageBox.className = 'relative my-4 w-full max-w-2xl bg-gradient-to-b from-slate-950 to-slate-900 border-4 border-amber-500/60 rounded-3xl py-10 px-8 flex flex-col items-center justify-center shadow-2xl shadow-amber-500/15';
+    compTag.className = 'text-xs font-bold text-amber-400 bg-amber-500/15 border border-amber-500/30 px-3.5 py-1 rounded-full uppercase tracking-wider';
+    itemSubtext.className = 'text-base font-extrabold text-amber-400 bg-amber-500/10 px-5 py-1.5 rounded-xl border border-amber-500/20';
+  } else if (comp === 'emblems') {
+    compTitleText = 'Emblem Competition (15 Emblems)';
+    compTagHtml = '<i class="fa-solid fa-shield-halved mr-1"></i> Emblem Competition';
+    compPrefix = 'Emblem';
+    if (iconBox) iconBox.className = 'w-12 h-12 rounded-2xl bg-cyan-500/20 border-cyan-500/40 text-cyan-400 border flex items-center justify-center text-2xl font-bold';
+    if (stageBox) stageBox.className = 'relative my-4 w-full max-w-2xl bg-gradient-to-b from-slate-950 to-slate-900 border-4 border-cyan-500/60 rounded-3xl py-10 px-8 flex flex-col items-center justify-center shadow-2xl shadow-cyan-500/15';
+    compTag.className = 'text-xs font-bold text-cyan-400 bg-cyan-500/15 border border-cyan-500/30 px-3.5 py-1 rounded-full uppercase tracking-wider';
+    itemSubtext.className = 'text-base font-extrabold text-cyan-400 bg-cyan-500/10 px-5 py-1.5 rounded-xl border border-cyan-500/20';
+  } else {
+    // stamps
+    compTitleText = 'Commemorative Stamp Selection (15 Stamps)';
+    compTagHtml = '<i class="fa-solid fa-stamp mr-1"></i> Commemorative Stamp Selection';
+    compPrefix = 'Stamp';
+    if (iconBox) iconBox.className = 'w-12 h-12 rounded-2xl bg-purple-500/20 border-purple-500/40 text-purple-400 border flex items-center justify-center text-2xl font-bold';
+    if (stageBox) stageBox.className = 'relative my-4 w-full max-w-2xl bg-gradient-to-b from-slate-950 to-slate-900 border-4 border-purple-500/60 rounded-3xl py-10 px-8 flex flex-col items-center justify-center shadow-2xl shadow-purple-500/15';
+    compTag.className = 'text-xs font-bold text-purple-400 bg-purple-500/15 border border-purple-500/30 px-3.5 py-1 rounded-full uppercase tracking-wider';
+    itemSubtext.className = 'text-base font-extrabold text-purple-400 bg-purple-500/10 px-5 py-1.5 rounded-xl border border-purple-500/20';
   }
 
   // Status Badge
@@ -66,25 +98,10 @@ function renderDisplay() {
     statusPill.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-slate-500"></span><span>Please wait for voting to open</span>';
   }
 
-  // Giant Display Number (Replacing Image) with Distinct 2 Colors
-  const stageBox = document.getElementById('dispStageBox');
-  const compTag = document.getElementById('dispCompTag');
-  const itemSubtext = document.getElementById('dispItemSubtext');
-
-  if (isFlags) {
-    if (stageBox) stageBox.className = 'relative my-4 w-full max-w-2xl bg-gradient-to-b from-slate-950 to-slate-900 border-4 border-amber-500/60 rounded-3xl py-10 px-8 flex flex-col items-center justify-center shadow-2xl shadow-amber-500/15';
-    compTag.className = 'text-xs font-bold text-amber-400 bg-amber-500/15 border border-amber-500/30 px-3.5 py-1 rounded-full uppercase tracking-wider';
-    compTag.innerHTML = '<i class="fa-solid fa-flag mr-1"></i> Flag Competition';
-    itemSubtext.className = 'text-base font-extrabold text-amber-400 bg-amber-500/10 px-5 py-1.5 rounded-xl border border-amber-500/20';
-  } else {
-    if (stageBox) stageBox.className = 'relative my-4 w-full max-w-2xl bg-gradient-to-b from-slate-950 to-slate-900 border-4 border-cyan-500/60 rounded-3xl py-10 px-8 flex flex-col items-center justify-center shadow-2xl shadow-cyan-500/15';
-    compTag.className = 'text-xs font-bold text-cyan-400 bg-cyan-500/15 border border-cyan-500/30 px-3.5 py-1 rounded-full uppercase tracking-wider';
-    compTag.innerHTML = '<i class="fa-solid fa-shield-halved mr-1"></i> Emblem Competition';
-    itemSubtext.className = 'text-base font-extrabold text-cyan-400 bg-cyan-500/10 px-5 py-1.5 rounded-xl border border-cyan-500/20';
-  }
-
+  document.getElementById('dispCompTitle').textContent = compTitleText;
+  compTag.innerHTML = compTagHtml;
   document.getElementById('dispGiantNumber').textContent = formattedNum;
-  itemSubtext.textContent = `${isFlags ? 'Flag' : 'Emblem'} Design #${formattedNum}`;
+  itemSubtext.textContent = `${compPrefix} Design #${formattedNum}`;
 
   // 20 Judges Submission Progress
   const compScores = (state.scores && state.scores[comp]) || {};
@@ -128,7 +145,10 @@ function renderDisplay() {
 // Render Winners Podium
 function renderPodium() {
   const comp = state.activeCompetition;
-  const isFlags = comp === 'flags';
+  let compPrefix = 'Flag';
+  if (comp === 'emblems') compPrefix = 'Emblem';
+  else if (comp === 'stamps') compPrefix = 'Stamp';
+
   const totalCount = (state.totalItems && state.totalItems[comp]) || 15;
   const compScores = (state.scores && state.scores[comp]) || {};
   const judges = state.judges || [];
@@ -159,7 +179,7 @@ function renderPodium() {
 
   // 2nd Place (Silver)
   if (second) {
-    const label = `${isFlags ? 'Flag' : 'Emblem'} #${second.number < 10 ? '0' + second.number : second.number}`;
+    const label = `${compPrefix} #${second.number < 10 ? '0' + second.number : second.number}`;
     container.innerHTML += `
       <div class="order-2 md:order-1 bg-slate-900/90 border-2 border-slate-400 rounded-3xl p-6 text-center flex flex-col items-center silver-glow">
         <div class="w-12 h-12 rounded-full bg-slate-300 text-slate-950 font-black text-xl flex items-center justify-center -mt-10 shadow-lg">2</div>
@@ -175,7 +195,7 @@ function renderPodium() {
 
   // 1st Place (Gold)
   if (first) {
-    const label = `${isFlags ? 'Flag' : 'Emblem'} #${first.number < 10 ? '0' + first.number : first.number}`;
+    const label = `${compPrefix} #${first.number < 10 ? '0' + first.number : first.number}`;
     container.innerHTML += `
       <div class="order-1 md:order-2 bg-slate-900/90 border-2 border-amber-400 rounded-3xl p-8 text-center flex flex-col items-center gold-glow transform md:-translate-y-4">
         <div class="w-16 h-16 rounded-full bg-amber-400 text-slate-950 font-black text-2xl flex items-center justify-center -mt-14 shadow-2xl">
@@ -193,7 +213,7 @@ function renderPodium() {
 
   // 3rd Place (Bronze)
   if (third) {
-    const label = `${isFlags ? 'Flag' : 'Emblem'} #${third.number < 10 ? '0' + third.number : third.number}`;
+    const label = `${compPrefix} #${third.number < 10 ? '0' + third.number : third.number}`;
     container.innerHTML += `
       <div class="order-3 md:order-3 bg-slate-900/90 border-2 border-amber-700 rounded-3xl p-6 text-center flex flex-col items-center bronze-glow">
         <div class="w-12 h-12 rounded-full bg-amber-700 text-white font-black text-xl flex items-center justify-center -mt-10 shadow-lg">3</div>

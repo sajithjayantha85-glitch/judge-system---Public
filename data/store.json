@@ -1,5 +1,5 @@
 {
-  "activeCompetition": "flags",
+  "activeCompetition": "stamps",
   "activeItemId": "flag-1",
   "votingLocked": false,
   "broadcastActiveItem": true,
@@ -223,16 +223,25 @@
       "1": {
         "1": {
           "score": 10,
-          "submittedAt": "2026-09-11T05:40:22.185Z"
+          "submittedAt": "2026-09-11T17:16:04.696Z"
         }
       }
     },
-    "emblems": {}
+    "emblems": {},
+    "stamps": {
+      "1": {
+        "2": {
+          "score": 9,
+          "submittedAt": "2026-09-11T17:16:04.707Z"
+        }
+      }
+    }
   },
   "activeItemNumber": 1,
   "votingOpen": true,
   "totalItems": {
     "flags": 15,
-    "emblems": 15
+    "emblems": 15,
+    "stamps": 15
   }
 }

@@ -41,8 +41,10 @@ async function testServer() {
     const stateRes = await request('/api/state');
     if (stateRes.status !== 200) throw new Error(`Status ${stateRes.status}`);
     if (stateRes.body.judges.length !== 20) throw new Error('Expected 20 judges');
-    if (stateRes.body.totalItems.flags !== 15 || stateRes.body.totalItems.emblems !== 15) throw new Error('Expected 15 flags and 15 emblems');
-    console.log('✅ State verified (20 judges configured, 15 Flags & 15 Emblems)');
+    if (stateRes.body.totalItems.flags !== 15 || stateRes.body.totalItems.emblems !== 15 || stateRes.body.totalItems.stamps !== 15) {
+      throw new Error('Expected 15 flags, 15 emblems, and 15 stamps');
+    }
+    console.log('✅ State verified (20 judges configured, 15 Flags, 15 Emblems & 15 Stamps)');
 
     // 2. Test Admin Login with invalid & valid password
     console.log('2. Testing Admin Login with incorrect password...');
@@ -63,8 +65,8 @@ async function testServer() {
     if (goodLogin.status !== 200 || !goodLogin.body.success) throw new Error('Admin login failed');
     console.log('✅ Admin login succeeded with admin2026');
 
-    // 3. Test Admin set-round with x-admin-password header
-    console.log('3. Opening voting with x-admin-password header...');
+    // 3. Test Admin set-round for Flags
+    console.log('3. Opening voting for Flags Design #01...');
     const roundRes = await request('/api/admin/set-round', {
       method: 'POST',
       headers: {
@@ -74,10 +76,10 @@ async function testServer() {
       body: JSON.stringify({ competition: 'flags', itemNumber: 1, votingOpen: true })
     });
     if (roundRes.status !== 200 || !roundRes.body.votingOpen) throw new Error('Admin open voting failed');
-    console.log('✅ Admin set-round succeeded (Voting opened for Design #01)');
+    console.log('✅ Admin set-round succeeded (Voting opened for Flag Design #01)');
 
-    // 4. Judge Login & Submit Score
-    console.log('4. Testing Judge 01 Login & Score submission...');
+    // 4. Judge Login & Submit Score for Flags
+    console.log('4. Testing Judge 01 Login & Score submission for Flag Design #01...');
     const loginRes = await request('/api/judge/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -91,17 +93,42 @@ async function testServer() {
       body: JSON.stringify({ judgeId: 1, pin: '1001', score: 10 })
     });
     if (scoreRes.status !== 200 || !scoreRes.body.success) throw new Error('Score submission failed');
-    console.log('✅ Judge score 10 recorded for Design #01');
+    console.log('✅ Judge score 10 recorded for Flag Design #01');
 
-    // 5. Test CSV Export in English
-    console.log('5. Testing CSV Export in English...');
-    const csvRes = await request('/api/export/csv?competition=flags');
-    if (csvRes.status !== 200 || !csvRes.body.includes('Judge 01') || !csvRes.body.includes('Design Number')) {
-      throw new Error('CSV export failed or missing English headers');
+    // 5. Test Admin set-round for Commemorative Stamps
+    console.log('5. Testing Admin switch to Commemorative Stamps...');
+    const stampRoundRes = await request('/api/admin/set-round', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-password': 'admin2026'
+      },
+      body: JSON.stringify({ competition: 'stamps', itemNumber: 1, votingOpen: true })
+    });
+    if (stampRoundRes.status !== 200 || stampRoundRes.body.activeCompetition !== 'stamps') {
+      throw new Error('Switching to stamps competition failed');
     }
-    console.log('✅ CSV Export verified in English');
+    console.log('✅ Admin switched to Commemorative Stamps successfully');
 
-    console.log('\n🎉 ALL TESTS PASSED! Admin Password Protection & 100% English Verified.');
+    // 6. Judge Submit Score for Stamps
+    console.log('6. Submitting Judge 02 score for Stamp Design #01...');
+    const stampScoreRes = await request('/api/score', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ judgeId: 2, pin: '1002', score: 9 })
+    });
+    if (stampScoreRes.status !== 200 || !stampScoreRes.body.success) throw new Error('Stamp score submission failed');
+    console.log('✅ Judge 02 score 9 recorded for Stamp Design #01');
+
+    // 7. Test CSV Export for Stamps
+    console.log('7. Testing CSV Export for Commemorative Stamps...');
+    const csvRes = await request('/api/export/csv?competition=stamps');
+    if (csvRes.status !== 200 || !csvRes.body.includes('Judge 01') || !csvRes.body.includes('Stamp #01')) {
+      throw new Error('Stamps CSV export failed or missing Stamp labels');
+    }
+    console.log('✅ Stamps CSV Export verified (with Stamp #01 label)');
+
+    console.log('\n🎉 ALL TESTS PASSED! Flags (15), Emblems (15), and Commemorative Stamps (15) fully operational!');
     server.close(() => process.exit(0));
   } catch (err) {
     console.error('❌ Test failed:', err.message);
