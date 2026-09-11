@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard | විනිශ්චය පාලක පුවරුව</title>
+  <title>Admin Control Panel | පාලක පුවරුව</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;600;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
   <script src="/socket.io/socket.io.js"></script>
   <style>
     body { font-family: 'Inter', 'Noto Sans Sinhala', sans-serif; }
@@ -22,45 +22,33 @@
           <i class="fa-solid fa-sliders"></i>
         </a>
         <div>
-          <h1 class="text-base font-bold text-white leading-tight">පරිපාලක පාලක පුවරුව (Admin Dashboard)</h1>
-          <p class="text-xs text-slate-400">20 Judges Real-time Competition Controller</p>
+          <h1 class="text-base font-bold text-white leading-tight">සජීවී විනිශ්චය පාලක පුවරුව (Admin Dashboard)</h1>
+          <p class="text-xs text-slate-400">Live Synchronized Judging Controller</p>
         </div>
       </div>
 
-      <!-- Actions Bar -->
-      <div class="flex items-center space-x-2.5 flex-wrap">
+      <!-- Actions -->
+      <div class="flex items-center space-x-3 flex-wrap">
         <!-- Switch Competition -->
         <div class="bg-slate-800 p-1 rounded-xl flex border border-slate-700">
-          <button id="tabFlags" onclick="switchCompetition('flags')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-amber-500 text-white shadow">
-            <i class="fa-solid fa-flag mr-1"></i> කොඩි (Flags)
+          <button id="tabFlags" onclick="setCompetition('flags')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-amber-500 text-white shadow">
+            <i class="fa-solid fa-flag mr-1"></i> කොඩි තරඟය
           </button>
-          <button id="tabEmblems" onclick="switchCompetition('emblems')" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white">
-            <i class="fa-solid fa-shield-halved mr-1"></i> ලාංඡන (Emblems)
+          <button id="tabEmblems" onclick="setCompetition('emblems')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white">
+            <i class="fa-solid fa-shield-halved mr-1"></i> ලාංඡන තරඟය
           </button>
         </div>
 
-        <!-- Lock Voting -->
-        <button id="btnToggleLock" onclick="toggleVotingLock()" class="px-3.5 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 border transition-all bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700">
-          <i class="fa-solid fa-lock-open text-emerald-400" id="lockIcon"></i>
-          <span id="lockText">ලකුණු දීම ක්‍රියාත්මකයි</span>
-        </button>
-
-        <!-- Broadcast Toggle -->
-        <button id="btnToggleBroadcast" onclick="toggleBroadcast()" class="px-3.5 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 border transition-all bg-blue-500/10 text-blue-400 border-blue-500/30 hover:bg-blue-500/20">
-          <i class="fa-solid fa-tower-broadcast"></i>
-          <span id="broadcastText">Auto Sync: On</span>
-        </button>
-
-        <!-- Export CSV -->
+        <!-- CSV Export -->
         <a id="btnExportCsv" href="/api/export/csv" class="px-3.5 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition-all">
           <i class="fa-solid fa-file-excel"></i>
           <span>Excel Export</span>
         </a>
 
-        <!-- Open Display in New Tab -->
+        <!-- Open Display -->
         <a href="/display.html" target="_blank" class="px-3 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">
           <i class="fa-solid fa-arrow-up-right-from-square"></i>
-          <span>Display View</span>
+          <span>Projector View</span>
         </a>
       </div>
     </div>
@@ -69,108 +57,119 @@
   <!-- Main Container -->
   <main class="max-w-7xl mx-auto px-6 py-6 w-full space-y-6 flex-1">
 
-    <!-- TOP SECTION: LIVE ITEM & 20 JUDGES MATRIX -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- TOP SECTION: BIG LIVE ITEM CONTROLLER & 20 JUDGES MATRIX -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-      <!-- Active Item Control Card (1 Col) -->
-      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl flex flex-col justify-between">
+      <!-- Left Column: Active Item & Big Voting Toggle (5 cols) -->
+      <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between">
         <div>
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-bold text-amber-400 uppercase tracking-wider bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 rounded-lg">
-              සක්‍රිය අයිතමය (Active Item)
+          <div class="flex items-center justify-between mb-4">
+            <span class="text-xs font-bold text-amber-400 uppercase tracking-wider bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-lg" id="activeCompHeader">
+              කොඩි තේරීමේ තරඟය
             </span>
-            <button onclick="openAddItemModal()" class="text-xs text-blue-400 hover:text-blue-300 flex items-center space-x-1 font-semibold">
-              <i class="fa-solid fa-plus"></i>
-              <span>නිර්මාණයක් එකතු කරන්න</span>
-            </button>
+            <div class="flex items-center space-x-2 text-xs text-slate-400">
+              <span>මුළු ගණන:</span>
+              <input type="number" id="inputTotalItems" min="1" max="50" class="w-12 bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 text-center text-white font-bold" onchange="updateTotalItems(this.value)">
+            </div>
           </div>
 
-          <!-- Select Item Dropdown -->
-          <select id="activeItemSelect" onchange="changeActiveItem(this.value)" class="w-full bg-slate-800 border border-slate-700 text-white font-bold rounded-xl px-4 py-2.5 mb-4 focus:outline-none focus:border-amber-500">
-            <!-- Populated via JS -->
-          </select>
-
-          <!-- Current Item Preview -->
-          <div class="relative w-full aspect-video rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 mb-3">
-            <img id="adminItemPreview" src="" class="w-full h-full object-contain">
+          <!-- Active Number Visual -->
+          <div class="bg-slate-950 border border-slate-800 rounded-2xl p-6 text-center my-3">
+            <span class="text-xs text-slate-400 font-semibold block uppercase tracking-widest">දැනට තිරගත නිර්මාණය</span>
+            <div class="text-6xl font-black text-white mt-1" id="activeNumberText">
+              01
+            </div>
+            <span class="text-xs text-slate-400 block mt-1" id="activeNumberSubtext">Design Number 01</span>
           </div>
 
-          <h3 id="adminItemTitle" class="text-lg font-bold text-white">Flag #01</h3>
-          <p id="adminItemDesc" class="text-xs text-slate-400 mt-1"></p>
+          <!-- Quick Number Selector -->
+          <div class="my-4">
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">අංකය තෝරන්න (Select Number):</label>
+            <div id="numberPills" class="flex space-x-1.5 overflow-x-auto pb-2 scrollbar-none">
+              <!-- Number buttons 1, 2, 3... -->
+            </div>
+          </div>
         </div>
 
-        <!-- Next / Prev Controls -->
-        <div class="flex items-center space-x-3 mt-4 pt-4 border-t border-slate-800">
-          <button onclick="navigateItem(-1)" class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-slate-200 flex items-center justify-center space-x-1.5 transition-all">
-            <i class="fa-solid fa-chevron-left text-[10px]"></i>
-            <span>කලින් එක (Prev)</span>
+        <!-- Big Voting Button & Prev/Next -->
+        <div class="space-y-3 pt-4 border-t border-slate-800">
+          <!-- Big Toggle Voting Button -->
+          <button id="btnToggleVoting" onclick="toggleVoting()" class="w-full py-4 rounded-2xl font-black text-base transition-all shadow-xl flex items-center justify-center space-x-2.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 active:scale-[0.98]">
+            <i class="fa-solid fa-play text-lg" id="btnVotingIcon"></i>
+            <span id="btnVotingText">ලකුණු ලබාදීම ආරම්භ කරන්න (Open Voting)</span>
           </button>
-          <button onclick="navigateItem(1)" class="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center justify-center space-x-1.5 transition-all shadow-lg shadow-amber-500/20">
-            <span>ඊළඟ එක (Next)</span>
-            <i class="fa-solid fa-chevron-right text-[10px]"></i>
-          </button>
+
+          <!-- Prev / Next Number -->
+          <div class="flex items-center space-x-2">
+            <button onclick="navigateNumber(-1)" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs flex items-center justify-center space-x-1.5 transition-all">
+              <i class="fa-solid fa-chevron-left"></i>
+              <span>කලින් අංකය</span>
+            </button>
+            <button onclick="navigateNumber(1)" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs flex items-center justify-center space-x-1.5 transition-all">
+              <span>ඊළඟ අංකය</span>
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- 20 Judges Real-time Submission Matrix (2 Cols) -->
-      <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between">
+      <!-- Right Column: 20 Judges Real-time Matrix (7 cols) -->
+      <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between">
         <div>
           <div class="flex items-center justify-between mb-4">
             <div>
               <h2 class="text-base font-bold text-white flex items-center space-x-2">
                 <i class="fa-solid fa-users text-amber-400"></i>
-                <span>විනිශ්චයකරුවන් 20 දෙනාගේ සජීවී ලකුණු තත්ත්වය (Live Judge Matrix)</span>
+                <span id="matrixHeader">අංක 01 සඳහා විනිශ්චයකරුවන් 20 දෙනාගේ තත්ත්වය</span>
               </h2>
-              <p class="text-xs text-slate-400 mt-0.5" id="matrixSubtitle">
-                සක්‍රිය නිර්මාණය සඳහා විනිශ්චයකරුවන් ලකුණු ලබාදීමේ ප්‍රගතිය
-              </p>
+              <p class="text-xs text-slate-400 mt-0.5">ලකුණු ලැබෙන විට ක්ෂණිකව කොළ පැහැයෙන් සටහන් වේ</p>
             </div>
             <div class="text-right">
-              <span id="submissionRatio" class="text-2xl font-black text-amber-400">0 / 20</span>
-              <span class="text-xs text-slate-400 block font-semibold">Submitted</span>
+              <span id="matrixRatio" class="text-2xl font-black text-amber-400">0 / 20</span>
+              <span class="text-[10px] text-slate-400 block font-semibold">Submitted</span>
             </div>
           </div>
 
-          <!-- 20 Judges Grid (4 rows of 5 or 2 rows of 10) -->
-          <div id="judgesMatrix" class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-10 gap-2.5">
-            <!-- Generated via JS for Judge 1 to 20 -->
+          <!-- 20 Judges Grid (2 rows of 10 or 4 rows of 5) -->
+          <div id="judgesGrid" class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-10 gap-2.5">
+            <!-- Judge 01 to 20 badges -->
           </div>
         </div>
 
-        <!-- Active Item Score Stats Summary -->
+        <!-- Active Number Summary -->
         <div class="mt-6 pt-4 border-t border-slate-800 grid grid-cols-3 gap-4 text-center">
           <div class="bg-slate-800/60 p-3 rounded-2xl border border-slate-800">
             <span class="text-[11px] text-slate-400 font-semibold block">මුළු ලකුණු (Total)</span>
-            <span id="statActiveTotal" class="text-xl font-bold text-white">0</span>
+            <span id="statTotal" class="text-xl font-bold text-white">0</span>
             <span class="text-[10px] text-slate-500 block">out of 200</span>
           </div>
           <div class="bg-slate-800/60 p-3 rounded-2xl border border-slate-800">
             <span class="text-[11px] text-slate-400 font-semibold block">සාමාන්‍යය (Average)</span>
-            <span id="statActiveAvg" class="text-xl font-bold text-amber-400">0.00</span>
+            <span id="statAvg" class="text-xl font-bold text-amber-400">0.00</span>
             <span class="text-[10px] text-slate-500 block">out of 10.0</span>
           </div>
           <div class="bg-slate-800/60 p-3 rounded-2xl border border-slate-800">
-            <span class="text-[11px] text-slate-400 font-semibold block">ඉහළම / පහළම (High/Low)</span>
-            <span id="statActiveRange" class="text-xl font-bold text-emerald-400">- / -</span>
-            <span class="text-[10px] text-slate-500 block">Min & Max</span>
+            <span class="text-[11px] text-slate-400 font-semibold block">අවම / උපරිම (Min / Max)</span>
+            <span id="statMinMax" class="text-xl font-bold text-emerald-400">- / -</span>
+            <span class="text-[10px] text-slate-500 block">Scale 1-10</span>
           </div>
         </div>
       </div>
 
     </div>
 
-    <!-- BOTTOM SECTION: COMPREHENSIVE LEADERBOARD & RESULTS TABLE -->
+    <!-- BOTTOM SECTION: FULL RESULTS TABLE & LEADERBOARD -->
     <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl">
       <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
         <div>
           <h2 class="text-lg font-bold text-white flex items-center space-x-2">
             <i class="fa-solid fa-ranking-star text-amber-400"></i>
-            <span id="tableTitle">කොඩි තරඟයේ සවිස්තරාත්මක ප්‍රතිඵල (Full Leaderboard)</span>
+            <span id="tableTitle">සවිස්තරාත්මක ප්‍රතිඵල සටහන (Results Table)</span>
           </h2>
           <p class="text-xs text-slate-400">ස්වයංක්‍රීයව ඉහළම සාමාන්‍ය ලකුණු අනුව ශ්‍රේණිගත වේ</p>
         </div>
 
-        <div class="flex items-center space-x-2">
+        <div>
           <button onclick="confirmResetScores()" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-all">
             <i class="fa-solid fa-rotate-left mr-1"></i> ලකුණු Reset කරන්න
           </button>
@@ -182,57 +181,21 @@
         <table class="w-full text-left text-xs border-collapse" id="resultsTable">
           <thead class="bg-slate-800/80 text-slate-300 font-bold border-b border-slate-700">
             <tr>
-              <th class="p-3 w-12 text-center">Rank</th>
-              <th class="p-3 w-32">Design</th>
-              <!-- Judge 01 to 20 Columns inserted via JS -->
+              <th class="p-3 w-14 text-center">Rank</th>
+              <th class="p-3 w-36">Design</th>
+              <!-- Dynamic J01 to J20 -->
               <th class="p-3 w-20 text-center text-amber-400">Total</th>
-              <th class="p-3 w-20 text-center text-emerald-400">Average</th>
-              <th class="p-3 w-16 text-center">Action</th>
+              <th class="p-3 w-24 text-center text-emerald-400">Average</th>
             </tr>
           </thead>
           <tbody id="resultsTableBody" class="divide-y divide-slate-800">
-            <!-- Rows dynamically inserted -->
+            <!-- Dynamic rows -->
           </tbody>
         </table>
       </div>
     </div>
 
   </main>
-
-  <!-- Add Item Modal -->
-  <div id="addItemModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-base font-bold text-white">නව නිර්මාණයක් එක් කරන්න</h3>
-        <button onclick="closeAddItemModal()" class="text-slate-400 hover:text-white">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
-
-      <form id="addItemForm" class="space-y-4" enctype="multipart/form-data">
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">මාතෘකාව (Title)</label>
-          <input type="text" id="newTitle" placeholder="උදා: Flag #06" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">විස්තරය (Description)</label>
-          <input type="text" id="newDesc" placeholder="උදා: නිර්මාණ අංක 06" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">ඡායාරූපය (Image Upload)</label>
-          <input type="file" id="newImageFile" accept="image/*" class="w-full text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-amber-400 hover:file:bg-slate-700">
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-300 mb-1">හෝ Image URL (Optional)</label>
-          <input type="url" id="newImageUrl" placeholder="https://..." class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
-        </div>
-
-        <button type="submit" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-xs shadow-lg shadow-amber-500/20 transition-all">
-          එක් කරන්න (Add Design)
-        </button>
-      </form>
-    </div>
-  </div>
 
   <script src="/js/admin.js"></script>
 </body>

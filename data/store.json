@@ -200,20 +200,56 @@
           "title": "Emblem #04",
           "description": "නිර්මාණ අංක 04 (Design #04)",
           "imageUrl": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80"
+        },
+        {
+          "id": "emblem-1789099647355",
+          "number": 5,
+          "title": "6",
+          "description": "නිර්මාණ අංක 5",
+          "imageUrl": "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=600&auto=format&fit=crop&q=80"
+        },
+        {
+          "id": "emblem-1789099664639",
+          "number": 6,
+          "title": "7",
+          "description": "නිර්මාණ අංක 6",
+          "imageUrl": "https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=600&auto=format&fit=crop&q=80"
         }
       ]
     }
   },
   "scores": {
     "flags": {
-      "flag-1": {
+      "1": {
         "1": {
           "score": 9,
+          "submittedAt": "2026-09-11T04:14:55.276Z"
+        }
+      },
+      "flag-1": {
+        "1": {
+          "score": 8,
           "comment": "Great color harmony!",
-          "submittedAt": "2026-09-11T03:58:40.536Z"
+          "submittedAt": "2026-09-11T04:09:21.853Z"
+        }
+      },
+      "flag-2": {
+        "1": {
+          "score": 3,
+          "comment": "",
+          "submittedAt": "2026-09-11T04:10:11.672Z"
+        }
+      },
+      "flag-5": {
+        "1": {
+          "score": 4,
+          "comment": "",
+          "submittedAt": "2026-09-11T04:10:28.440Z"
         }
       }
     },
     "emblems": {}
-  }
+  },
+  "activeItemNumber": 1,
+  "votingOpen": true
 }

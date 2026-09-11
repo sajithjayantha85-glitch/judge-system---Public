@@ -4,47 +4,34 @@ const { Server } = require('socket.io');
 const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
-const multer = require('multer');
 
 const defaultData = require('./data/defaultData');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
-  }
+  cors: { origin: '*', methods: ['GET', 'POST'] }
 });
 
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = path.join(__dirname, 'data');
 const STORE_PATH = path.join(DATA_DIR, 'store.json');
-const UPLOADS_DIR = path.join(__dirname, 'public', 'uploads');
 
-// Ensure directories exist
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
-// Multer storage for image uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOADS_DIR),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
-    cb(null, uniqueName);
-  }
-});
-const upload = multer({ storage });
-
-// Load state from file or defaultData
+// Load state from file or default
 let state;
 try {
   if (fs.existsSync(STORE_PATH)) {
     state = JSON.parse(fs.readFileSync(STORE_PATH, 'utf-8'));
-    // Ensure all 20 judges exist
     if (!state.judges || state.judges.length < 20) {
       state.judges = defaultData.judges;
+    }
+    if (typeof state.activeItemNumber !== 'number') {
+      state.activeItemNumber = 1;
+    }
+    if (typeof state.votingOpen !== 'boolean') {
+      state.votingOpen = false;
     }
   } else {
     state = JSON.parse(JSON.stringify(defaultData));
@@ -55,7 +42,6 @@ try {
   state = JSON.parse(JSON.stringify(defaultData));
 }
 
-// Helper to save state
 function saveState() {
   try {
     fs.writeFileSync(STORE_PATH, JSON.stringify(state, null, 2), 'utf-8');
@@ -70,18 +56,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// API Routes
-
-// Get full system state
+// Public State API
 app.get('/api/state', (req, res) => {
   res.json({
     activeCompetition: state.activeCompetition,
-    activeItemId: state.activeItemId,
-    votingLocked: state.votingLocked,
-    broadcastActiveItem: state.broadcastActiveItem,
-    competitions: state.competitions,
+    activeItemNumber: state.activeItemNumber,
+    votingOpen: state.votingOpen,
+    totalItems: state.totalItems,
     scores: state.scores,
-    judges: state.judges.map(j => ({ id: j.id, name: j.name, active: j.active })) // hide pins from public state
+    judges: state.judges.map(j => ({ id: j.id, name: j.name })) // exclude PIN
   });
 });
 
@@ -92,208 +75,134 @@ app.post('/api/judge/login', (req, res) => {
   const judge = state.judges.find(j => j.id === numericId);
 
   if (!judge) {
-    return res.status(404).json({ success: false, message: 'විනිශ්චයකාර අංකය හමු නොවීය (Judge not found)' });
+    return res.status(404).json({ success: false, message: 'විනිශ්චයකාර අංකය හමු නොවීය' });
   }
 
   if (judge.pin && judge.pin !== pin?.trim()) {
-    return res.status(401).json({ success: false, message: 'වැරදි PIN අංකයකි (Invalid PIN)' });
+    return res.status(401).json({ success: false, message: 'වැරදි PIN අංකයකි' });
   }
 
-  res.json({
-    success: true,
-    judge: { id: judge.id, name: judge.name }
-  });
+  res.json({ success: true, judge: { id: judge.id, name: judge.name } });
 });
 
-// Submit Score
+// Submit Score (Judge)
 app.post('/api/score', (req, res) => {
-  const { judgeId, pin, competitionId, itemId, score, comment } = req.body;
+  const { judgeId, pin, score } = req.body;
 
-  if (state.votingLocked) {
-    return res.status(403).json({ success: false, message: 'ලකුණු ලබාදීම අත්හිටුවා ඇත (Voting is currently locked)' });
+  if (!state.votingOpen) {
+    return res.status(403).json({ success: false, message: 'මෙම අවස්ථාවේ ලකුණු ලබාදීම වසා ඇත (Voting is closed)' });
   }
 
   const numericJudgeId = parseInt(judgeId, 10);
-  const numericScore = parseFloat(score);
+  const numericScore = parseInt(score, 10);
 
   if (isNaN(numericScore) || numericScore < 1 || numericScore > 10) {
-    return res.status(400).json({ success: false, message: 'ලකුණු 1 සිට 10 දක්වා පමණක් වලංගු වේ (Score must be 1 to 10)' });
+    return res.status(400).json({ success: false, message: 'ලකුණු 1 සිට 10 දක්වා පමණක් ලබාදිය හැක' });
   }
 
   const judge = state.judges.find(j => j.id === numericJudgeId);
   if (!judge || judge.pin !== pin?.trim()) {
-    return res.status(401).json({ success: false, message: 'අවලංගු විනිශ්චයකාර පිවිසුමකි (Unauthorized)' });
+    return res.status(401).json({ success: false, message: 'අවලංගු විනිශ්චයකාර පිවිසුමකි' });
   }
 
-  if (!state.scores[competitionId]) {
-    state.scores[competitionId] = {};
-  }
-  if (!state.scores[competitionId][itemId]) {
-    state.scores[competitionId][itemId] = {};
-  }
+  const comp = state.activeCompetition;
+  const num = state.activeItemNumber.toString();
+
+  if (!state.scores[comp]) state.scores[comp] = {};
+  if (!state.scores[comp][num]) state.scores[comp][num] = {};
 
   const submission = {
     score: numericScore,
-    comment: (comment || '').trim(),
     submittedAt: new Date().toISOString()
   };
 
-  state.scores[competitionId][itemId][numericJudgeId] = submission;
+  state.scores[comp][num][numericJudgeId] = submission;
   saveState();
 
-  // Broadcast to all connected clients
+  // Instant broadcast
   io.emit('score-updated', {
-    competitionId,
-    itemId,
+    competition: comp,
+    itemNumber: state.activeItemNumber,
     judgeId: numericJudgeId,
     submission
   });
 
-  res.json({ success: true, submission });
+  res.json({ success: true, submission, itemNumber: state.activeItemNumber });
 });
 
-// Admin: Switch Competition
-app.post('/api/admin/set-competition', (req, res) => {
-  const { competitionId } = req.body;
-  if (!state.competitions[competitionId]) {
-    return res.status(400).json({ success: false, message: 'අවලංගු තරඟයකි (Invalid competition)' });
+// Admin: Set Active Round & Voting Status
+app.post('/api/admin/set-round', (req, res) => {
+  const { competition, itemNumber, votingOpen } = req.body;
+
+  if (competition && (competition === 'flags' || competition === 'emblems')) {
+    state.activeCompetition = competition;
+  }
+  if (typeof itemNumber === 'number' && itemNumber >= 1) {
+    state.activeItemNumber = itemNumber;
+  }
+  if (typeof votingOpen === 'boolean') {
+    state.votingOpen = votingOpen;
   }
 
-  state.activeCompetition = competitionId;
-  const items = state.competitions[competitionId].items;
-  state.activeItemId = items.length > 0 ? items[0].id : null;
   saveState();
 
-  io.emit('competition-changed', {
+  io.emit('round-changed', {
     activeCompetition: state.activeCompetition,
-    activeItemId: state.activeItemId
+    activeItemNumber: state.activeItemNumber,
+    votingOpen: state.votingOpen
   });
 
-  res.json({ success: true, activeCompetition: state.activeCompetition, activeItemId: state.activeItemId });
-});
-
-// Admin: Set Active Item
-app.post('/api/admin/set-active-item', (req, res) => {
-  const { itemId } = req.body;
-  state.activeItemId = itemId;
-  saveState();
-
-  io.emit('active-item-changed', {
-    itemId: state.activeItemId,
-    broadcast: state.broadcastActiveItem
+  res.json({
+    success: true,
+    activeCompetition: state.activeCompetition,
+    activeItemNumber: state.activeItemNumber,
+    votingOpen: state.votingOpen
   });
-
-  res.json({ success: true, activeItemId: state.activeItemId });
 });
 
-// Admin: Toggle Lock
-app.post('/api/admin/toggle-lock', (req, res) => {
-  state.votingLocked = !state.votingLocked;
-  saveState();
-
-  io.emit('voting-lock-changed', { votingLocked: state.votingLocked });
-  res.json({ success: true, votingLocked: state.votingLocked });
-});
-
-// Admin: Toggle Broadcast Mode
-app.post('/api/admin/toggle-broadcast', (req, res) => {
-  state.broadcastActiveItem = !state.broadcastActiveItem;
-  saveState();
-
-  io.emit('broadcast-mode-changed', { broadcastActiveItem: state.broadcastActiveItem });
-  res.json({ success: true, broadcastActiveItem: state.broadcastActiveItem });
-});
-
-// Admin: Add new Flag or Emblem item
-app.post('/api/admin/add-item', upload.single('image'), (req, res) => {
-  const { competitionId, title, description, imageUrl } = req.body;
-  if (!state.competitions[competitionId]) {
-    return res.status(400).json({ success: false, message: 'Invalid competition' });
+// Admin: Update total number of items (flags/emblems)
+app.post('/api/admin/set-total-items', (req, res) => {
+  const { competition, count } = req.body;
+  const num = parseInt(count, 10);
+  if (state.totalItems[competition] && num > 0) {
+    state.totalItems[competition] = num;
+    saveState();
+    io.emit('total-items-changed', { totalItems: state.totalItems });
+    res.json({ success: true, totalItems: state.totalItems });
+  } else {
+    res.status(400).json({ success: false, message: 'Invalid count' });
   }
-
-  const items = state.competitions[competitionId].items;
-  const nextNumber = items.length > 0 ? Math.max(...items.map(i => i.number)) + 1 : 1;
-  const prefix = competitionId === 'flags' ? 'flag' : 'emblem';
-  const id = `${prefix}-${Date.now()}`;
-
-  let finalImageUrl = imageUrl;
-  if (req.file) {
-    finalImageUrl = `/uploads/${req.file.filename}`;
-  }
-  if (!finalImageUrl) {
-    finalImageUrl = 'https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=600&auto=format&fit=crop&q=80';
-  }
-
-  const newItem = {
-    id,
-    number: nextNumber,
-    title: title || `${competitionId === 'flags' ? 'Flag' : 'Emblem'} #${nextNumber < 10 ? '0' + nextNumber : nextNumber}`,
-    description: description || `නිර්මාණ අංක ${nextNumber}`,
-    imageUrl: finalImageUrl
-  };
-
-  items.push(newItem);
-  saveState();
-
-  io.emit('item-added', { competitionId, item: newItem });
-  res.json({ success: true, item: newItem });
-});
-
-// Admin: Delete item
-app.post('/api/admin/delete-item', (req, res) => {
-  const { competitionId, itemId } = req.body;
-  if (!state.competitions[competitionId]) return res.status(400).json({ success: false });
-
-  state.competitions[competitionId].items = state.competitions[competitionId].items.filter(i => i.id !== itemId);
-  if (state.scores[competitionId]) {
-    delete state.scores[competitionId][itemId];
-  }
-  saveState();
-
-  io.emit('item-deleted', { competitionId, itemId });
-  res.json({ success: true });
 });
 
 // Admin: Reset Scores
 app.post('/api/admin/reset-scores', (req, res) => {
-  const { competitionId } = req.body;
-  if (competitionId === 'all') {
+  const { competition } = req.body;
+  if (competition === 'all') {
     state.scores = { flags: {}, emblems: {} };
-  } else if (state.scores[competitionId]) {
-    state.scores[competitionId] = {};
+  } else if (state.scores[competition]) {
+    state.scores[competition] = {};
   }
   saveState();
 
-  io.emit('scores-reset', { competitionId });
-  res.json({ success: true });
-});
-
-// Admin: Reset to Factory Defaults
-app.post('/api/admin/factory-reset', (req, res) => {
-  state = JSON.parse(JSON.stringify(defaultData));
-  saveState();
-  io.emit('factory-reset', state);
+  io.emit('scores-reset', { competition });
   res.json({ success: true });
 });
 
 // Export CSV of Results
 app.get('/api/export/csv', (req, res) => {
-  const competitionId = req.query.competitionId || state.activeCompetition;
-  const comp = state.competitions[competitionId];
-  if (!comp) return res.status(404).send('Competition not found');
-
-  const compScores = state.scores[competitionId] || {};
+  const competition = req.query.competition || state.activeCompetition;
+  const compScores = state.scores[competition] || {};
   const judges = state.judges;
+  const totalCount = (state.totalItems && state.totalItems[competition]) || 10;
 
-  // Header row: Rank, Number, Title, Judge 01 ... Judge 20, Total, Average
-  let header = ['Rank', 'Item Number', 'Title'];
+  let header = ['Rank', 'Design Number'];
   judges.forEach(j => header.push(j.name));
-  header.push('Total Score (out of ' + (judges.length * 10) + ')');
-  header.push('Average Score (out of 10)');
+  header.push(`Total (out of ${judges.length * 10})`);
+  header.push('Average (out of 10.00)');
 
-  // Compute row data
-  const rows = comp.items.map(item => {
-    const itemScores = compScores[item.id] || {};
+  const rows = [];
+  for (let num = 1; num <= totalCount; num++) {
+    const itemScores = compScores[num.toString()] || {};
     let total = 0;
     let count = 0;
     const judgeScores = judges.map(j => {
@@ -307,61 +216,56 @@ app.get('/api/export/csv', (req, res) => {
     });
 
     const average = count > 0 ? (total / count).toFixed(2) : '0.00';
-
-    return {
-      number: item.number,
-      title: item.title,
+    rows.push({
+      number: num,
       judgeScores,
       total,
       average: parseFloat(average)
-    };
-  });
+    });
+  }
 
   // Sort by average descending
   rows.sort((a, b) => b.average - a.average || b.total - a.total);
 
-  // Build CSV content
   let csv = header.join(',') + '\r\n';
   rows.forEach((r, idx) => {
+    const label = `${competition === 'flags' ? 'Flag' : 'Emblem'} #${r.number < 10 ? '0' + r.number : r.number}`;
     const line = [
       idx + 1,
-      `"${r.number}"`,
-      `"${r.title.replace(/"/g, '""')}"`,
+      `"${label}"`,
       ...r.judgeScores,
       r.total,
-      r.average
+      r.average.toFixed(2)
     ];
     csv += line.join(',') + '\r\n';
   });
 
-  const filename = `${competitionId}-results-${new Date().toISOString().slice(0, 10)}.csv`;
+  const filename = `${competition}-results-${new Date().toISOString().slice(0, 10)}.csv`;
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-  res.send('\uFEFF' + csv); // add UTF-8 BOM for clean Excel display
+  res.send('\uFEFF' + csv);
 });
 
-// Socket.io Real-time Handlers
+// Socket connection
 io.on('connection', (socket) => {
-  // Client can register role
+  // Client can register
   socket.on('register', (data) => {
     socket.data.role = data.role;
     socket.data.judgeId = data.judgeId;
   });
 });
 
-// Start Server
 if (require.main === module) {
   server.listen(PORT, () => {
     console.log(`=========================================`);
-    console.log(`Judges Competition Server Running!`);
-    console.log(`Local Access:   http://localhost:${PORT}`);
+    console.log(`Live Synchronized Judging Server Running!`);
+    console.log(`URL:            http://localhost:${PORT}`);
     console.log(`Judge Portal:   http://localhost:${PORT}/judge.html`);
     console.log(`Admin Panel:    http://localhost:${PORT}/admin.html`);
-    console.log(`Display Screen: http://localhost:${PORT}/display.html`);
-    console.log(`QR Cards Sheet: http://localhost:${PORT}/qr-sheet.html`);
+    console.log(`Projector View: http://localhost:${PORT}/display.html`);
+    console.log(`QR Cards:       http://localhost:${PORT}/qr-sheet.html`);
     console.log(`=========================================`);
   });
 }
 
 module.exports = { app, server };
-

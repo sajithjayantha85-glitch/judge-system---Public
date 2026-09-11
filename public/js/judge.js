@@ -1,13 +1,10 @@
-// Judge Mobile Client
+// Ultra-Simplified Synchronized Judge Client
 const socket = io();
 
 let currentJudge = null;
 let currentPin = null;
 let state = null;
-let selectedScore = null;
-let viewingItemId = null;
 
-// Initialize
 document.addEventListener('DOMContentLoaded', async () => {
   await loadState();
   populateJudgeDropdown();
@@ -15,18 +12,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupSocketListeners();
 });
 
-// Load state from backend
 async function loadState() {
   try {
     const res = await fetch('/api/state');
     state = await res.json();
-    renderUI();
+    renderJudgeView();
   } catch (err) {
-    console.error('Error fetching state:', err);
+    console.error('Failed to load state:', err);
   }
 }
 
-// Populate 20 judges dropdown
 function populateJudgeDropdown() {
   const select = document.getElementById('judgeSelect');
   select.innerHTML = '<option value="">-- තෝරන්න (Select Judge) --</option>';
@@ -40,7 +35,6 @@ function populateJudgeDropdown() {
   });
 }
 
-// Check URL Params e.g. /judge.html?judge=1&pin=1001
 function checkUrlParamsForAutoLogin() {
   const params = new URLSearchParams(window.location.search);
   const judgeId = params.get('judge') || params.get('id');
@@ -51,7 +45,6 @@ function checkUrlParamsForAutoLogin() {
   }
 }
 
-// Login Form Submit
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const judgeId = document.getElementById('judgeSelect').value;
@@ -77,15 +70,13 @@ async function performLogin(judgeId, pin) {
       currentPin = pin;
       document.getElementById('authScreen').classList.add('hidden');
       document.getElementById('headerJudgeName').textContent = currentJudge.name;
-      
-      // Register with socket
       socket.emit('register', { role: 'judge', judgeId: currentJudge.id });
-      renderUI();
+      renderJudgeView();
     } else {
       showLoginError(data.message || 'පිවිසීම අසාර්ථකයි');
     }
   } catch (err) {
-    showLoginError('සම්බන්ධතාව බිඳවැටුණි. නැවත උත්සාහ කරන්න.');
+    showLoginError('සම්බන්ධතා දෝෂයකි. නැවත උත්සාහ කරන්න.');
   }
 }
 
@@ -95,167 +86,57 @@ function showLoginError(msg) {
   errBox.classList.remove('hidden');
 }
 
-// Render Judge UI
-function renderUI() {
-  if (!state) return;
+// Render dynamic state on judge phone
+function renderJudgeView() {
+  if (!state || !currentJudge) return;
 
-  // Active competition
-  const activeComp = state.competitions[state.activeCompetition];
-  if (activeComp) {
-    document.getElementById('headerCompBadge').textContent = activeComp.name;
-  }
+  const comp = state.activeCompetition;
+  const num = state.activeItemNumber;
+  const isFlags = comp === 'flags';
 
-  // Voting lock state
-  const lockBanner = document.getElementById('lockBanner');
-  const submitBtn = document.getElementById('submitBtn');
-  if (state.votingLocked) {
-    lockBanner.classList.remove('hidden');
-    submitBtn.disabled = true;
-    submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+  // Badges & Labels
+  const compLabel = isFlags ? 'කොඩි තේරීමේ තරඟය' : 'ලාංඡන තේරීමේ තරඟය';
+  document.getElementById('compNameBadge').textContent = isFlags ? 'කොඩි තරඟය' : 'ලාංඡන තරඟය';
+  document.getElementById('activeCompLabel').textContent = compLabel;
+
+  const numText = `අංක ${num < 10 ? '0' + num : num}`;
+  document.getElementById('activeItemNumberDisplay').textContent = numText;
+
+  // Check if judge already scored this active item
+  const compScores = (state.scores && state.scores[comp]) || {};
+  const itemScores = compScores[num.toString()] || {};
+  const existingScore = itemScores[currentJudge.id];
+
+  const cardOpen = document.getElementById('votingOpenCard');
+  const cardDone = document.getElementById('scoreDoneCard');
+  const cardClosed = document.getElementById('votingClosedCard');
+
+  cardOpen.classList.add('hidden');
+  cardDone.classList.add('hidden');
+  cardClosed.classList.add('hidden');
+
+  if (existingScore && typeof existingScore.score === 'number') {
+    // 1. Judge has already scored this item
+    document.getElementById('doneItemTitle').textContent = `${numText} සඳහා ලකුණු සටහන් විය!`;
+    document.getElementById('submittedScoreValue').textContent = existingScore.score;
+    cardDone.classList.remove('hidden');
+  } else if (state.votingOpen) {
+    // 2. Voting is currently open and judge hasn't scored yet
+    cardOpen.classList.remove('hidden');
   } else {
-    lockBanner.classList.add('hidden');
-    submitBtn.disabled = false;
-    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-  }
-
-  // Active items
-  const items = activeComp ? activeComp.items : [];
-  if (!viewingItemId || !items.find(i => i.id === viewingItemId)) {
-    viewingItemId = state.activeItemId || (items[0] ? items[0].id : null);
-  }
-
-  renderItemChips(items);
-  renderActiveItem();
-}
-
-// Render horizontal item chips
-function renderItemChips(items) {
-  const container = document.getElementById('itemNavList');
-  container.innerHTML = '';
-
-  let scoredCount = 0;
-  const compScores = (state.scores && state.scores[state.activeCompetition]) || {};
-
-  items.forEach(item => {
-    const itemScores = compScores[item.id] || {};
-    const isScored = currentJudge && itemScores[currentJudge.id] !== undefined;
-    if (isScored) scoredCount++;
-
-    const isCurrent = item.id === viewingItemId;
-
-    const btn = document.createElement('button');
-    btn.className = `flex-shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
-      isCurrent 
-        ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30' 
-        : isScored
-          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-          : 'bg-slate-800 text-slate-400 border border-slate-700'
-    }`;
-    btn.innerHTML = `
-      <span>${item.number < 10 ? '#0' + item.number : '#' + item.number}</span>
-      ${isScored ? '<i class="fa-solid fa-check text-[10px]"></i>' : ''}
-    `;
-    btn.onclick = () => {
-      viewingItemId = item.id;
-      renderActiveItem();
-      renderItemChips(items);
-    };
-    container.appendChild(btn);
-  });
-
-  document.getElementById('scoringProgress').textContent = `${scoredCount} / ${items.length} Scored`;
-}
-
-// Render active item details & scoring buttons
-function renderActiveItem() {
-  const activeComp = state.competitions[state.activeCompetition];
-  if (!activeComp) return;
-
-  const item = activeComp.items.find(i => i.id === viewingItemId);
-  if (!item) return;
-
-  document.getElementById('activeItemBadge').textContent = `No. ${item.number < 10 ? '0' + item.number : item.number}`;
-  document.getElementById('activeItemTitle').textContent = item.title;
-  document.getElementById('activeItemDesc').textContent = item.description || '';
-  document.getElementById('activeItemImage').src = item.imageUrl || '';
-
-  // Check if current judge scored this item already
-  const compScores = (state.scores && state.scores[state.activeCompetition]) || {};
-  const itemScores = compScores[item.id] || {};
-  const existingScore = currentJudge && itemScores[currentJudge.id];
-
-  const tag = document.getElementById('alreadyScoredTag');
-  const scoreVal = document.getElementById('currentScoreValue');
-  const commentInput = document.getElementById('scoreComment');
-
-  if (existingScore) {
-    tag.classList.remove('hidden');
-    scoreVal.textContent = existingScore.score;
-    commentInput.value = existingScore.comment || '';
-    selectScore(existingScore.score, false);
-  } else {
-    tag.classList.add('hidden');
-    commentInput.value = '';
-    clearSelectedScore();
+    // 3. Voting is closed / waiting for admin
+    cardClosed.classList.remove('hidden');
   }
 }
 
-// Score selection (1 - 10)
-function selectScore(val, triggerVibration = true) {
-  selectedScore = val;
+// 1-Click Score Submission
+async function submitScore(val) {
+  if (!currentJudge || !currentPin) return;
 
-  // Haptic feedback if supported on mobile
-  if (triggerVibration && window.navigator && window.navigator.vibrate) {
-    window.navigator.vibrate(20);
+  // Haptic vibration feedback on mobile
+  if (window.navigator && window.navigator.vibrate) {
+    window.navigator.vibrate(40);
   }
-
-  const buttons = document.querySelectorAll('.score-btn');
-  buttons.forEach(btn => {
-    const btnVal = parseInt(btn.getAttribute('data-val'), 10);
-    btn.classList.remove('selected', 'bg-amber-500', 'bg-emerald-500', 'bg-red-500', 'text-white', 'ring-2', 'ring-white');
-    btn.classList.add('bg-slate-800', 'text-slate-200');
-
-    if (btnVal === val) {
-      btn.classList.remove('bg-slate-800', 'text-slate-200');
-      btn.classList.add('selected', 'text-white', 'ring-2', 'ring-white');
-
-      // Color coding: 1-4 coral/red, 5-7 amber/gold, 8-10 emerald green
-      if (val <= 4) {
-        btn.classList.add('bg-red-500');
-      } else if (val <= 7) {
-        btn.classList.add('bg-amber-500');
-      } else {
-        btn.classList.add('bg-emerald-500');
-      }
-    }
-  });
-}
-
-function clearSelectedScore() {
-  selectedScore = null;
-  const buttons = document.querySelectorAll('.score-btn');
-  buttons.forEach(btn => {
-    btn.classList.remove('selected', 'bg-amber-500', 'bg-emerald-500', 'bg-red-500', 'text-white', 'ring-2', 'ring-white');
-    btn.classList.add('bg-slate-800', 'text-slate-200');
-  });
-}
-
-// Submit current score
-async function submitCurrentScore() {
-  if (!currentJudge || !currentPin) {
-    alert('කරුණාකර පළමුව පිවිසෙන්න');
-    return;
-  }
-  if (!selectedScore) {
-    alert('කරුණාකර 1 සිට 10 දක්වා ලකුණක් තෝරන්න (Please pick a score 1 to 10)');
-    return;
-  }
-  if (state.votingLocked) {
-    alert('ලකුණු ලබාදීම අත්හිටුවා ඇත (Voting is currently locked)');
-    return;
-  }
-
-  const comment = document.getElementById('scoreComment').value;
 
   try {
     const res = await fetch('/api/score', {
@@ -264,33 +145,20 @@ async function submitCurrentScore() {
       body: JSON.stringify({
         judgeId: currentJudge.id,
         pin: currentPin,
-        competitionId: state.activeCompetition,
-        itemId: viewingItemId,
-        score: selectedScore,
-        comment
+        score: val
       })
     });
     const data = await res.json();
 
     if (data.success) {
-      showToast(`ලකුණු ${selectedScore}/10 සාර්ථකව සටහන් විය!`);
-
       // Update local state copy
-      if (!state.scores[state.activeCompetition]) {
-        state.scores[state.activeCompetition] = {};
-      }
-      if (!state.scores[state.activeCompetition][viewingItemId]) {
-        state.scores[state.activeCompetition][viewingItemId] = {};
-      }
-      state.scores[state.activeCompetition][viewingItemId][currentJudge.id] = data.submission;
+      const comp = state.activeCompetition;
+      const num = state.activeItemNumber.toString();
+      if (!state.scores[comp]) state.scores[comp] = {};
+      if (!state.scores[comp][num]) state.scores[comp][num] = {};
+      state.scores[comp][num][currentJudge.id] = data.submission;
 
-      // Update chips & scored badge
-      const activeComp = state.competitions[state.activeCompetition];
-      if (activeComp) {
-        renderItemChips(activeComp.items);
-      }
-      document.getElementById('alreadyScoredTag').classList.remove('hidden');
-      document.getElementById('currentScoreValue').textContent = selectedScore;
+      renderJudgeView();
     } else {
       alert(data.message || 'ලකුණු සටහන් කිරීම අසාර්ථකයි');
     }
@@ -299,67 +167,28 @@ async function submitCurrentScore() {
   }
 }
 
-// Image Modal
-function openImageModal() {
-  const src = document.getElementById('activeItemImage').src;
-  if (!src) return;
-  document.getElementById('modalImage').src = src;
-  document.getElementById('imageModal').classList.remove('hidden');
-}
-
-function closeImageModal() {
-  document.getElementById('imageModal').classList.add('hidden');
-}
-
-// Toast
-function showToast(msg) {
-  const toast = document.getElementById('toast');
-  document.getElementById('toastMsg').textContent = msg;
-  toast.classList.remove('hidden');
-  setTimeout(() => toast.classList.add('hidden'), 3000);
-}
-
-// Socket Listeners for Realtime Sync
+// Socket Listeners
 function setupSocketListeners() {
+  // Live round or voting status change by Admin
+  socket.on('round-changed', (data) => {
+    if (!state) return;
+    state.activeCompetition = data.activeCompetition;
+    state.activeItemNumber = data.activeItemNumber;
+    state.votingOpen = data.votingOpen;
+    renderJudgeView();
+  });
+
+  // Score updated
   socket.on('score-updated', (data) => {
     if (!state) return;
-    if (!state.scores[data.competitionId]) state.scores[data.competitionId] = {};
-    if (!state.scores[data.competitionId][data.itemId]) state.scores[data.competitionId][data.itemId] = {};
-    state.scores[data.competitionId][data.itemId][data.judgeId] = data.submission;
+    if (!state.scores[data.competition]) state.scores[data.competition] = {};
+    if (!state.scores[data.competition][data.itemNumber.toString()]) state.scores[data.competition][data.itemNumber.toString()] = {};
+    state.scores[data.competition][data.itemNumber.toString()][data.judgeId] = data.submission;
 
-    if (data.competitionId === state.activeCompetition) {
-      const activeComp = state.competitions[state.activeCompetition];
-      if (activeComp) renderItemChips(activeComp.items);
+    if (currentJudge && data.judgeId === currentJudge.id) {
+      renderJudgeView();
     }
   });
 
-  socket.on('competition-changed', (data) => {
-    state.activeCompetition = data.activeCompetition;
-    state.activeItemId = data.activeItemId;
-    viewingItemId = data.activeItemId;
-    renderUI();
-  });
-
-  socket.on('active-item-changed', (data) => {
-    state.activeItemId = data.itemId;
-    // If broadcast is enabled, automatically shift judge's view
-    if (data.broadcast) {
-      viewingItemId = data.itemId;
-      renderUI();
-    }
-  });
-
-  socket.on('voting-lock-changed', (data) => {
-    state.votingLocked = data.votingLocked;
-    renderUI();
-  });
-
-  socket.on('scores-reset', (data) => {
-    if (data.competitionId === 'all') {
-      state.scores = { flags: {}, emblems: {} };
-    } else {
-      state.scores[data.competitionId] = {};
-    }
-    renderUI();
-  });
+  socket.on('scores-reset', () => loadState());
 }

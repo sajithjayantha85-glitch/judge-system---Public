@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Live Display | ප්‍රධාන තිරය</title>
+  <title>Main Projector Display | ප්‍රධාන තිරය</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;600;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
   <script src="/socket.io/socket.io.js"></script>
   <style>
     body { font-family: 'Inter', 'Noto Sans Sinhala', sans-serif; }
-    .gold-glow { box-shadow: 0 0 50px rgba(234, 179, 8, 0.3); }
-    .silver-glow { box-shadow: 0 0 40px rgba(203, 213, 225, 0.2); }
-    .bronze-glow { box-shadow: 0 0 40px rgba(180, 83, 9, 0.2); }
+    .gold-glow { box-shadow: 0 0 60px rgba(234, 179, 8, 0.35); }
+    .silver-glow { box-shadow: 0 0 50px rgba(203, 213, 225, 0.25); }
+    .bronze-glow { box-shadow: 0 0 50px rgba(180, 83, 9, 0.25); }
   </style>
 </head>
 <body class="h-full flex flex-col justify-between bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 p-8 select-none">
@@ -21,13 +21,13 @@
   <header class="flex items-center justify-between border-b border-slate-800/80 pb-4">
     <div class="flex items-center space-x-4">
       <div class="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-2xl font-bold">
-        <i class="fa-solid fa-award"></i>
+        <i class="fa-solid fa-trophy"></i>
       </div>
       <div>
-        <h1 id="displayCompTitle" class="text-2xl font-black text-white tracking-wide">
+        <h1 id="dispCompTitle" class="text-2xl font-black text-white tracking-wide">
           කොඩි තේරීමේ තරඟය (Flag Competition)
         </h1>
-        <p class="text-xs text-slate-400">නිල විනිශ්චය මණ්ඩල සජීවී ප්‍රතිඵල පුවරුව (Official Live Board)</p>
+        <p class="text-xs text-slate-400">නිල විනිශ්චය මණ්ඩල සජීවී ලකුණු පුවරුව (Official Live Board)</p>
       </div>
     </div>
 
@@ -38,7 +38,7 @@
           <i class="fa-solid fa-tv mr-1.5"></i> සජීවී තිරය (Live View)
         </button>
         <button id="viewPodiumBtn" onclick="switchView('podium')" class="px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white">
-          <i class="fa-solid fa-trophy mr-1.5"></i> ජයග්‍රාහකයින් (Winners)
+          <i class="fa-solid fa-award mr-1.5"></i> ජයග්‍රාහකයින් (Winners)
         </button>
       </div>
 
@@ -49,53 +49,47 @@
   </header>
 
   <!-- ================= LIVE ITEM VIEW ================= -->
-  <main id="liveView" class="flex-1 flex flex-col justify-center max-w-6xl mx-auto w-full my-6">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-      
-      <!-- Design Image Preview (7 cols) -->
-      <div class="lg:col-span-7 bg-slate-900/80 border border-slate-800 rounded-3xl p-4 shadow-2xl relative">
-        <div class="aspect-video w-full rounded-2xl overflow-hidden bg-slate-950 flex items-center justify-center">
-          <img id="liveItemImage" src="" class="max-w-full max-h-full object-contain">
-        </div>
-        <div class="absolute top-8 left-8">
-          <span id="liveItemNumberBadge" class="px-4 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-black text-sm tracking-wider shadow-lg shadow-amber-500/30">
-            FLAG #01
-          </span>
-        </div>
+  <main id="liveView" class="flex-1 flex flex-col justify-center max-w-5xl mx-auto w-full my-6">
+    <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-10 shadow-2xl flex flex-col items-center text-center">
+
+      <!-- Status Pill -->
+      <div id="dispVotingStatus" class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider mb-6 bg-slate-800 text-slate-400 border border-slate-700">
+        <span class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
+        <span>ලකුණු ලබාදීම විවෘත වන තෙක් රැඳී සිටින්න</span>
       </div>
 
-      <!-- Live Info & Submission Status (5 cols) -->
-      <div class="lg:col-span-5 flex flex-col space-y-6">
-        <div>
-          <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">දැනට තිරගත නිර්මාණය</span>
-          <h2 id="liveItemTitle" class="text-4xl font-black text-white mt-1 leading-tight">Flag #01</h2>
-          <p id="liveItemDesc" class="text-sm text-slate-400 mt-2"></p>
+      <!-- Giant Display Number -->
+      <span class="text-sm font-bold text-slate-400 uppercase tracking-widest block">දැනට තිරගත නිර්මාණය</span>
+      <h2 id="dispItemNumber" class="text-8xl font-black text-white my-3 tracking-tight">
+        අංක 01
+      </h2>
+      <p id="dispItemSubtext" class="text-base text-amber-400 font-bold mb-8">
+        Flag Design #01
+      </p>
+
+      <!-- 20 Judges Submission Progress Card -->
+      <div class="w-full max-w-2xl bg-slate-950 border border-slate-800 rounded-3xl p-6 shadow-inner">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-bold text-slate-400 flex items-center">
+            <i class="fa-solid fa-users text-amber-400 mr-2"></i> විනිශ්චයකරුවන් 20 දෙනාගේ ප්‍රගතිය
+          </span>
+          <span id="dispProgressText" class="text-2xl font-black text-amber-400">0 / 20</span>
         </div>
 
-        <!-- 20 Judges Submission Tracker -->
-        <div class="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl">
-          <div class="flex items-center justify-between mb-3">
-            <span class="text-xs font-bold text-slate-400 flex items-center">
-              <i class="fa-solid fa-users text-amber-400 mr-2 text-sm"></i> විනිශ්චයකරුවන්ගේ ප්‍රගතිය
-            </span>
-            <span id="liveProgressCount" class="text-2xl font-black text-amber-400">0 / 20</span>
-          </div>
+        <!-- Progress Bar -->
+        <div class="w-full bg-slate-800 h-4 rounded-full overflow-hidden p-0.5 border border-slate-700 mb-6">
+          <div id="dispProgressBar" class="h-full bg-gradient-to-r from-amber-500 to-emerald-400 rounded-full transition-all duration-300 w-0"></div>
+        </div>
 
-          <!-- Progress Bar -->
-          <div class="w-full bg-slate-800 h-4 rounded-full overflow-hidden p-0.5 border border-slate-700">
-            <div id="liveProgressBar" class="h-full bg-gradient-to-r from-amber-500 to-emerald-400 rounded-full transition-all duration-500 w-0"></div>
-          </div>
+        <!-- 20 Judges Dots -->
+        <div id="dispJudgesDots" class="grid grid-cols-10 gap-2">
+          <!-- J01 to J20 generated -->
+        </div>
 
-          <!-- 20 Dots Indicator -->
-          <div id="judgesDots" class="grid grid-cols-10 gap-2 mt-5">
-            <!-- 20 mini dots -->
-          </div>
-
-          <!-- Completed Announcement -->
-          <div id="allDoneAlert" class="hidden mt-5 p-3 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-center text-emerald-400 font-bold text-xs flex items-center justify-center space-x-2 animate-bounce">
-            <i class="fa-solid fa-circle-check text-base"></i>
-            <span>සියලු විනිශ්චයකරුවන් 20 දෙනා ලකුණු ලබාදී අවසන්!</span>
-          </div>
+        <!-- All Done Announcement -->
+        <div id="dispAllDoneAlert" class="hidden mt-6 p-4 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-center text-emerald-400 font-black text-sm flex items-center justify-center space-x-2 animate-bounce">
+          <i class="fa-solid fa-circle-check text-lg"></i>
+          <span>සියලු විනිශ්චයකරුවන් 20 දෙනා ලකුණු ලබාදී අවසන්!</span>
         </div>
       </div>
 
@@ -103,28 +97,26 @@
   </main>
 
   <!-- ================= PODIUM / WINNERS VIEW ================= -->
-  <main id="podiumView" class="hidden flex-1 flex flex-col justify-center max-w-6xl mx-auto w-full my-6">
+  <main id="podiumView" class="hidden flex-1 flex flex-col justify-center max-w-5xl mx-auto w-full my-6">
     <div class="text-center mb-8">
-      <h2 class="text-3xl font-black text-white">ජයග්‍රාහී නිර්මාණ (Top Winners)</h2>
+      <h2 class="text-4xl font-black text-white">ජයග්‍රාහී නිර්මාණ (Final Winners)</h2>
       <p class="text-xs text-slate-400 mt-1">විනිශ්චය මණ්ඩලයේ වැඩිම සාමාන්‍ය ලකුණු ලැබූ නිර්මාණ</p>
     </div>
 
     <!-- Top 3 Podium Cards -->
     <div id="podiumContainer" class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end max-w-4xl mx-auto w-full mb-8">
-      <!-- 2nd Place (Silver) -->
-      <!-- 1st Place (Gold) -->
-      <!-- 3rd Place (Bronze) -->
+      <!-- Generated via JS -->
     </div>
 
     <!-- Remaining Ranks Mini List -->
-    <div id="otherRanksList" class="max-w-2xl mx-auto w-full space-y-2">
+    <div id="otherRanksList" class="max-w-xl mx-auto w-full space-y-2 max-h-48 overflow-y-auto pr-2">
       <!-- 4th, 5th, etc. -->
     </div>
   </main>
 
   <!-- Footer -->
   <footer class="flex items-center justify-between border-t border-slate-800/80 pt-4 text-xs text-slate-500">
-    <div>Real-time Synchronized Display • 20 Judges Mobile System</div>
+    <div>Live Synchronized Display • Flag & Emblem Judging System</div>
     <div class="flex items-center space-x-2">
       <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
       <span class="text-slate-400 font-semibold">Live Feed</span>
