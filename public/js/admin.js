@@ -1,6 +1,21 @@
 // Synchronized Admin Controller Client
-const socket = io();
-let state = null;
+let socket = null;
+try {
+  if (typeof io !== 'undefined') {
+    socket = io();
+  }
+} catch (e) {
+  console.warn('Socket.io connection warning:', e);
+}
+
+let state = {
+  activeCompetition: 'flags',
+  activeItemNumber: 1,
+  votingOpen: false,
+  totalItems: { flags: 10, emblems: 10 },
+  judges: [],
+  scores: { flags: {}, emblems: {} }
+};
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadState();
@@ -351,6 +366,8 @@ async function confirmResetScores() {
 
 // Socket Listeners
 function setupSocketListeners() {
+  if (!socket) return;
+
   socket.on('round-changed', (data) => {
     if (!state) return;
     state.activeCompetition = data.activeCompetition;
@@ -378,3 +395,12 @@ function setupSocketListeners() {
 
   socket.on('scores-reset', () => loadState());
 }
+
+// Explicitly bind all actions to window
+window.setCompetition = setCompetition;
+window.setNumber = setNumber;
+window.navigateNumber = navigateNumber;
+window.toggleVoting = toggleVoting;
+window.updateTotalItems = updateTotalItems;
+window.confirmResetScores = confirmResetScores;
+

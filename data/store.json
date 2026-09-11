@@ -251,5 +251,9 @@
     "emblems": {}
   },
   "activeItemNumber": 1,
-  "votingOpen": true
+  "votingOpen": false,
+  "totalItems": {
+    "flags": 10,
+    "emblems": 10
+  }
 }

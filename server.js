@@ -33,6 +33,9 @@ try {
     if (typeof state.votingOpen !== 'boolean') {
       state.votingOpen = false;
     }
+    if (!state.totalItems) {
+      state.totalItems = { flags: 10, emblems: 10 };
+    }
   } else {
     state = JSON.parse(JSON.stringify(defaultData));
     fs.writeFileSync(STORE_PATH, JSON.stringify(state, null, 2), 'utf-8');
