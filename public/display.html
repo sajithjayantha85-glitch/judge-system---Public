@@ -33,6 +33,11 @@
 
     <!-- View Switcher & Fullscreen -->
     <div class="flex items-center space-x-3">
+      <a href="/" class="px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white flex items-center space-x-2 text-xs font-bold transition-all shadow-sm">
+        <i class="fa-solid fa-house"></i>
+        <span>මුල් පිටුව</span>
+      </a>
+
       <div class="bg-slate-900/90 border border-slate-800 p-1 rounded-xl flex">
         <button id="viewLiveBtn" onclick="switchView('live')" class="px-4 py-2 rounded-lg text-xs font-bold transition-all bg-amber-500 text-white shadow-md">
           <i class="fa-solid fa-tv mr-1.5"></i> සජීවී තිරය (Live View)
@@ -59,7 +64,7 @@
       </div>
 
       <!-- Prominent Stage Number Display Box (Replacing Image) -->
-      <div class="relative my-4 w-full max-w-2xl bg-gradient-to-b from-slate-950 to-slate-900 border-4 border-amber-500/60 rounded-3xl py-10 px-8 flex flex-col items-center justify-center shadow-2xl shadow-amber-500/15">
+      <div id="dispStageBox" class="relative my-4 w-full max-w-2xl bg-gradient-to-b from-slate-950 to-slate-900 border-4 border-amber-500/60 rounded-3xl py-10 px-8 flex flex-col items-center justify-center shadow-2xl shadow-amber-500/15">
         <div class="absolute top-4 left-6">
           <span id="dispCompTag" class="text-xs font-bold text-amber-400 bg-amber-500/15 border border-amber-500/30 px-3.5 py-1 rounded-full uppercase tracking-wider">
             කොඩි තරඟය

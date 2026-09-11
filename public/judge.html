@@ -54,7 +54,10 @@
     <!-- Top Sticky Header -->
     <header class="bg-slate-900 border border-slate-800 rounded-2xl px-4 py-3 shadow-md flex items-center justify-between mb-4">
       <div class="flex items-center space-x-2.5">
-        <div class="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-bold text-xs">
+        <a href="/" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 flex items-center justify-center text-xs transition-colors" title="මුල් පිටුවට (Home)">
+          <i class="fa-solid fa-house"></i>
+        </a>
+        <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-amber-400 font-bold text-xs" id="judgeAvatar">
           <i class="fa-solid fa-user-check"></i>
         </div>
         <div>
@@ -65,9 +68,11 @@
         </div>
       </div>
 
-      <span id="compNameBadge" class="text-xs font-bold px-3 py-1 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
-        කොඩි තරඟය
-      </span>
+      <div class="flex items-center space-x-2">
+        <span id="compNameBadge" class="text-xs font-bold px-3 py-1 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
+          කොඩි තරඟය
+        </span>
+      </div>
     </header>
 
     <!-- Center Dynamic View -->

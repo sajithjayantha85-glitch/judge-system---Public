@@ -4,8 +4,8 @@ module.exports = {
   activeItemNumber: 1,        // The current design number shown on projector (e.g. 1, 2, 3...)
   votingOpen: false,          // Admin controls whether voting is open or closed
   totalItems: {
-    flags: 10,                // Default 10 flags (can be adjusted dynamically by admin)
-    emblems: 10               // Default 10 emblems
+    flags: 15,                // 15 Flags
+    emblems: 15               // 15 Emblems
   },
 
   // 20 Judges configuration

@@ -47,14 +47,16 @@ function renderAdminUI() {
   const tableTitle = document.getElementById('tableTitle');
 
   if (isFlags) {
-    tabFlags.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-amber-500 text-white shadow';
+    tabFlags.className = 'px-3.5 py-1.5 rounded-lg text-xs font-black transition-all bg-amber-500 text-slate-950 shadow';
     tabEmblems.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white';
-    activeCompHeader.textContent = 'කොඩි තේරීමේ තරඟය (Flags)';
+    activeCompHeader.className = 'text-xs font-black uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30 px-3 py-1 rounded-lg';
+    activeCompHeader.innerHTML = '<i class="fa-solid fa-flag mr-1"></i> කොඩි තේරීමේ තරඟය (Flags)';
     tableTitle.textContent = 'කොඩි තරඟයේ සවිස්තරාත්මක ප්‍රතිඵල (Flags Results)';
   } else {
-    tabEmblems.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-amber-500 text-white shadow';
+    tabEmblems.className = 'px-3.5 py-1.5 rounded-lg text-xs font-black transition-all bg-cyan-500 text-slate-950 shadow';
     tabFlags.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white';
-    activeCompHeader.textContent = 'ලාංඡන තේරීමේ තරඟය (Emblems)';
+    activeCompHeader.className = 'text-xs font-black uppercase tracking-wider bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 px-3 py-1 rounded-lg';
+    activeCompHeader.innerHTML = '<i class="fa-solid fa-shield-halved mr-1"></i> ලාංඡන තේරීමේ තරඟය (Emblems)';
     tableTitle.textContent = 'ලාංඡන තරඟයේ සවිස්තරාත්මක ප්‍රතිඵල (Emblems Results)';
   }
 
@@ -77,9 +79,10 @@ function renderAdminUI() {
     const isCurrent = i === num;
     const hasScores = compScores[i.toString()] && Object.keys(compScores[i.toString()]).length > 0;
     const btn = document.createElement('button');
-    btn.className = `flex-shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1 ${
+    const activeColorClass = isFlags ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30' : 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/30';
+    btn.className = `flex-shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-black transition-all flex items-center space-x-1 ${
       isCurrent 
-        ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30' 
+        ? activeColorClass 
         : hasScores
           ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
           : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-white'

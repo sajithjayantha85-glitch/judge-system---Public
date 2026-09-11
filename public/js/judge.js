@@ -94,9 +94,21 @@ function renderJudgeView() {
   const num = state.activeItemNumber;
   const isFlags = comp === 'flags';
 
-  // Badges & Labels
+  // Badges & Labels with Distinct Colors
+  const compNameBadge = document.getElementById('compNameBadge');
+  const votingOpenCard = document.getElementById('votingOpenCard');
   const compLabel = isFlags ? 'කොඩි තේරීමේ තරඟය' : 'ලාංඡන තේරීමේ තරඟය';
-  document.getElementById('compNameBadge').textContent = isFlags ? 'කොඩි තරඟය' : 'ලාංඡන තරඟය';
+  
+  if (isFlags) {
+    compNameBadge.className = 'text-xs font-black px-3 py-1 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30';
+    compNameBadge.innerHTML = '<i class="fa-solid fa-flag mr-1"></i> කොඩි තරඟය';
+    votingOpenCard.className = 'hidden bg-slate-900 border-2 border-amber-500/50 rounded-3xl p-6 shadow-2xl text-center flex flex-col items-center';
+  } else {
+    compNameBadge.className = 'text-xs font-black px-3 py-1 rounded-full bg-cyan-500/15 text-cyan-400 border border-cyan-500/30';
+    compNameBadge.innerHTML = '<i class="fa-solid fa-shield-halved mr-1"></i> ලාංඡන තරඟය';
+    votingOpenCard.className = 'hidden bg-slate-900 border-2 border-cyan-500/50 rounded-3xl p-6 shadow-2xl text-center flex flex-col items-center';
+  }
+
   document.getElementById('activeCompLabel').textContent = compLabel;
 
   const formattedNum = num < 10 ? '0' + num : num;

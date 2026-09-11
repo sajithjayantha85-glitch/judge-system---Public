@@ -60,10 +60,25 @@ function renderDisplay() {
     statusPill.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-slate-500"></span><span>ලකුණු ලබාදීම විවෘත වන තෙක් රැඳී සිටින්න</span>';
   }
 
-  // Giant Display Number (Replacing Image)
-  document.getElementById('dispCompTag').textContent = isFlags ? 'කොඩි තරඟය' : 'ලාංඡන තරඟය';
+  // Giant Display Number (Replacing Image) with Distinct 2 Colors
+  const stageBox = document.getElementById('dispStageBox');
+  const compTag = document.getElementById('dispCompTag');
+  const itemSubtext = document.getElementById('dispItemSubtext');
+
+  if (isFlags) {
+    if (stageBox) stageBox.className = 'relative my-4 w-full max-w-2xl bg-gradient-to-b from-slate-950 to-slate-900 border-4 border-amber-500/60 rounded-3xl py-10 px-8 flex flex-col items-center justify-center shadow-2xl shadow-amber-500/15';
+    compTag.className = 'text-xs font-bold text-amber-400 bg-amber-500/15 border border-amber-500/30 px-3.5 py-1 rounded-full uppercase tracking-wider';
+    compTag.innerHTML = '<i class="fa-solid fa-flag mr-1"></i> කොඩි තරඟය';
+    itemSubtext.className = 'text-base font-extrabold text-amber-400 bg-amber-500/10 px-5 py-1.5 rounded-xl border border-amber-500/20';
+  } else {
+    if (stageBox) stageBox.className = 'relative my-4 w-full max-w-2xl bg-gradient-to-b from-slate-950 to-slate-900 border-4 border-cyan-500/60 rounded-3xl py-10 px-8 flex flex-col items-center justify-center shadow-2xl shadow-cyan-500/15';
+    compTag.className = 'text-xs font-bold text-cyan-400 bg-cyan-500/15 border border-cyan-500/30 px-3.5 py-1 rounded-full uppercase tracking-wider';
+    compTag.innerHTML = '<i class="fa-solid fa-shield-halved mr-1"></i> ලාංඡන තරඟය';
+    itemSubtext.className = 'text-base font-extrabold text-cyan-400 bg-cyan-500/10 px-5 py-1.5 rounded-xl border border-cyan-500/20';
+  }
+
   document.getElementById('dispGiantNumber').textContent = formattedNum;
-  document.getElementById('dispItemSubtext').textContent = `නිර්මාණ අංක ${formattedNum} (${isFlags ? 'Flag' : 'Emblem'} #${formattedNum})`;
+  itemSubtext.textContent = `නිර්මාණ අංක ${formattedNum} (${isFlags ? 'Flag' : 'Emblem'} #${formattedNum})`;
 
   // 20 Judges Submission Progress
   const compScores = (state.scores && state.scores[comp]) || {};
