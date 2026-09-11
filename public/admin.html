@@ -207,38 +207,28 @@
 
     </div>
 
-    <!-- ================= PRINTABLE JUDGE QR CARDS & ACCESS CODES (ADMIN ONLY) ================= -->
-    <div class="bg-slate-900 border border-purple-500/30 rounded-3xl p-6 shadow-xl">
-      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
-        <div class="flex items-center space-x-4">
-          <div class="w-12 h-12 rounded-2xl bg-purple-500/15 text-purple-400 border border-purple-500/30 flex items-center justify-center text-2xl flex-shrink-0">
-            <i class="fa-solid fa-print"></i>
-          </div>
-          <div>
-            <div class="flex items-center space-x-2">
-              <h3 class="text-base font-bold text-white">Printable Judge QR Cards & Access Codes</h3>
-              <span class="text-[10px] uppercase tracking-wider font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded">Confidential</span>
-            </div>
-            <p class="text-xs text-slate-400 mt-0.5">
-              Print individual A4 desk cards with QR codes & security PINs for the 20 judges, or use direct links below for admin testing.
-            </p>
-          </div>
+    <!-- ================= PRINTABLE JUDGE QR CARDS (ADMIN ONLY) ================= -->
+    <div class="bg-slate-900 border border-purple-500/30 rounded-3xl p-6 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div class="flex items-center space-x-4">
+        <div class="w-12 h-12 rounded-2xl bg-purple-500/15 text-purple-400 border border-purple-500/30 flex items-center justify-center text-2xl flex-shrink-0">
+          <i class="fa-solid fa-print"></i>
         </div>
-
-        <a href="/qr-sheet.html" target="_blank" class="px-5 py-3 bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-white font-bold rounded-xl text-xs flex items-center space-x-2 shadow-lg shadow-purple-600/25 transition-all flex-shrink-0">
-          <i class="fa-solid fa-qrcode"></i>
-          <span>Open Printable A4 QR Cards</span>
-          <i class="fa-solid fa-arrow-up-right-from-square text-[11px]"></i>
-        </a>
-      </div>
-
-      <!-- Quick Test Direct Links for Admin -->
-      <div class="pt-4 border-t border-slate-800">
-        <label class="block text-[11px] font-bold text-slate-400 mb-2">1-Click Direct Test Access for 20 Judges:</label>
-        <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-10 gap-2 text-center" id="adminJudgesQuickGrid">
-          <!-- Populated dynamically via admin.js -->
+        <div>
+          <div class="flex items-center space-x-2">
+            <h3 class="text-base font-bold text-white">Printable Judge QR Cards</h3>
+            <span class="text-[10px] uppercase tracking-wider font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded">Confidential</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5">
+            Generate and print official A4 desk cards with QR codes for the 20 judges. Distribute physical cards to judges so they can vote independently from their own mobile phones.
+          </p>
         </div>
       </div>
+
+      <a href="/qr-sheet.html" target="_blank" class="px-5 py-3 bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-white font-bold rounded-xl text-xs flex items-center space-x-2 shadow-lg shadow-purple-600/25 transition-all flex-shrink-0">
+        <i class="fa-solid fa-qrcode"></i>
+        <span>Open Printable A4 QR Cards</span>
+        <i class="fa-solid fa-arrow-up-right-from-square text-[11px]"></i>
+      </a>
     </div>
 
     <!-- BOTTOM SECTION: FULL RESULTS TABLE & LEADERBOARD -->
