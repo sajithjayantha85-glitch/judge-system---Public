@@ -3,6 +3,7 @@ module.exports = {
   activeCompetition: 'flags', // 'flags' or 'emblems'
   activeItemNumber: 1,        // The current design number shown on projector (e.g. 1, 2, 3...)
   votingOpen: false,          // Admin controls whether voting is open or closed
+  adminPassword: process.env.ADMIN_PASSWORD || 'admin2026',
   totalItems: {
     flags: 15,                // 15 Flags
     emblems: 15               // 15 Emblems

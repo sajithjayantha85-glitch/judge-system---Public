@@ -1,4 +1,4 @@
-// Synchronized Display / Projector Client
+// Synchronized Display / Projector Client (100% English)
 const socket = io();
 let state = null;
 let currentView = 'live'; // 'live' or 'podium'
@@ -24,14 +24,16 @@ function switchView(view) {
   const podiumBtn = document.getElementById('viewPodiumBtn');
   const liveView = document.getElementById('liveView');
   const podiumView = document.getElementById('podiumView');
+  const isFlags = state && state.activeCompetition === 'flags';
+  const activeColor = isFlags ? 'bg-amber-500 text-slate-950' : 'bg-cyan-500 text-slate-950';
 
   if (view === 'live') {
-    liveBtn.className = 'px-4 py-2 rounded-lg text-xs font-bold transition-all bg-amber-500 text-white shadow-md';
+    liveBtn.className = `px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeColor} shadow-md`;
     podiumBtn.className = 'px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white';
     liveView.classList.remove('hidden');
     podiumView.classList.add('hidden');
   } else {
-    podiumBtn.className = 'px-4 py-2 rounded-lg text-xs font-bold transition-all bg-amber-500 text-white shadow-md';
+    podiumBtn.className = `px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeColor} shadow-md`;
     liveBtn.className = 'px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white';
     liveView.classList.add('hidden');
     podiumView.classList.remove('hidden');
@@ -47,17 +49,21 @@ function renderDisplay() {
   const num = state.activeItemNumber;
   const formattedNum = num < 10 ? '0' + num : num;
 
-  // Header Title
-  document.getElementById('dispCompTitle').textContent = isFlags ? 'කොඩි තේරීමේ තරඟය (Flag Competition)' : 'ලාංඡන තේරීමේ තරඟය (Emblem Competition)';
+  // Header Title & Icon
+  document.getElementById('dispCompTitle').textContent = isFlags ? 'Flag Competition (15 Flags)' : 'Emblem Competition (15 Emblems)';
+  const iconBox = document.getElementById('dispHeaderIcon');
+  if (iconBox) {
+    iconBox.className = `w-12 h-12 rounded-2xl ${isFlags ? 'bg-amber-500/20 border-amber-500/40 text-amber-400' : 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400'} border flex items-center justify-center text-2xl font-bold`;
+  }
 
   // Status Badge
   const statusPill = document.getElementById('dispVotingStatus');
   if (state.votingOpen) {
     statusPill.className = 'inline-flex items-center space-x-2 px-5 py-2 rounded-full text-xs font-black uppercase tracking-wider mb-6 bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse';
-    statusPill.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span><span>සජීවීව ලකුණු ලබාදීම විවෘතයි (Voting in Progress)</span>';
+    statusPill.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span><span>Live Voting in Progress</span>';
   } else {
     statusPill.className = 'inline-flex items-center space-x-2 px-5 py-2 rounded-full text-xs font-black uppercase tracking-wider mb-6 bg-slate-800 text-slate-400 border border-slate-700';
-    statusPill.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-slate-500"></span><span>ලකුණු ලබාදීම විවෘත වන තෙක් රැඳී සිටින්න</span>';
+    statusPill.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-slate-500"></span><span>Please wait for voting to open</span>';
   }
 
   // Giant Display Number (Replacing Image) with Distinct 2 Colors
@@ -68,17 +74,17 @@ function renderDisplay() {
   if (isFlags) {
     if (stageBox) stageBox.className = 'relative my-4 w-full max-w-2xl bg-gradient-to-b from-slate-950 to-slate-900 border-4 border-amber-500/60 rounded-3xl py-10 px-8 flex flex-col items-center justify-center shadow-2xl shadow-amber-500/15';
     compTag.className = 'text-xs font-bold text-amber-400 bg-amber-500/15 border border-amber-500/30 px-3.5 py-1 rounded-full uppercase tracking-wider';
-    compTag.innerHTML = '<i class="fa-solid fa-flag mr-1"></i> කොඩි තරඟය';
+    compTag.innerHTML = '<i class="fa-solid fa-flag mr-1"></i> Flag Competition';
     itemSubtext.className = 'text-base font-extrabold text-amber-400 bg-amber-500/10 px-5 py-1.5 rounded-xl border border-amber-500/20';
   } else {
     if (stageBox) stageBox.className = 'relative my-4 w-full max-w-2xl bg-gradient-to-b from-slate-950 to-slate-900 border-4 border-cyan-500/60 rounded-3xl py-10 px-8 flex flex-col items-center justify-center shadow-2xl shadow-cyan-500/15';
     compTag.className = 'text-xs font-bold text-cyan-400 bg-cyan-500/15 border border-cyan-500/30 px-3.5 py-1 rounded-full uppercase tracking-wider';
-    compTag.innerHTML = '<i class="fa-solid fa-shield-halved mr-1"></i> ලාංඡන තරඟය';
+    compTag.innerHTML = '<i class="fa-solid fa-shield-halved mr-1"></i> Emblem Competition';
     itemSubtext.className = 'text-base font-extrabold text-cyan-400 bg-cyan-500/10 px-5 py-1.5 rounded-xl border border-cyan-500/20';
   }
 
   document.getElementById('dispGiantNumber').textContent = formattedNum;
-  itemSubtext.textContent = `නිර්මාණ අංක ${formattedNum} (${isFlags ? 'Flag' : 'Emblem'} #${formattedNum})`;
+  itemSubtext.textContent = `${isFlags ? 'Flag' : 'Emblem'} Design #${formattedNum}`;
 
   // 20 Judges Submission Progress
   const compScores = (state.scores && state.scores[comp]) || {};
@@ -123,7 +129,7 @@ function renderDisplay() {
 function renderPodium() {
   const comp = state.activeCompetition;
   const isFlags = comp === 'flags';
-  const totalCount = (state.totalItems && state.totalItems[comp]) || 10;
+  const totalCount = (state.totalItems && state.totalItems[comp]) || 15;
   const compScores = (state.scores && state.scores[comp]) || {};
   const judges = state.judges || [];
 
@@ -158,11 +164,11 @@ function renderPodium() {
       <div class="order-2 md:order-1 bg-slate-900/90 border-2 border-slate-400 rounded-3xl p-6 text-center flex flex-col items-center silver-glow">
         <div class="w-12 h-12 rounded-full bg-slate-300 text-slate-950 font-black text-xl flex items-center justify-center -mt-10 shadow-lg">2</div>
         <div class="my-5">
-          <span class="text-xs text-slate-400 font-bold block uppercase tracking-wider">දෙවන ස්ථානය (2nd)</span>
+          <span class="text-xs text-slate-400 font-bold block uppercase tracking-wider">2nd Place (Silver)</span>
           <h3 class="text-3xl font-black text-white mt-1">${label}</h3>
         </div>
         <div class="text-3xl font-black text-slate-200">${second.avg.toFixed(2)} <span class="text-xs text-slate-400 font-normal">/ 10</span></div>
-        <div class="text-xs text-slate-400 font-semibold mt-1">මුළු ලකුණු: ${second.total}</div>
+        <div class="text-xs text-slate-400 font-semibold mt-1">Total Score: ${second.total}</div>
       </div>
     `;
   }
@@ -176,11 +182,11 @@ function renderPodium() {
           <i class="fa-solid fa-crown text-2xl"></i>
         </div>
         <div class="my-6">
-          <span class="text-xs text-amber-400 font-bold block uppercase tracking-wider">ප්‍රථම ස්ථානය (Winner)</span>
+          <span class="text-xs text-amber-400 font-bold block uppercase tracking-wider">1st Place (Winner)</span>
           <h3 class="text-4xl font-black text-white mt-1">${label}</h3>
         </div>
         <div class="text-4xl font-black text-amber-400">${first.avg.toFixed(2)} <span class="text-xs text-slate-400 font-normal">/ 10</span></div>
-        <div class="text-sm text-slate-300 font-semibold mt-1">මුළු ලකුණු: ${first.total}</div>
+        <div class="text-sm text-slate-300 font-semibold mt-1">Total Score: ${first.total}</div>
       </div>
     `;
   }
@@ -192,11 +198,11 @@ function renderPodium() {
       <div class="order-3 md:order-3 bg-slate-900/90 border-2 border-amber-700 rounded-3xl p-6 text-center flex flex-col items-center bronze-glow">
         <div class="w-12 h-12 rounded-full bg-amber-700 text-white font-black text-xl flex items-center justify-center -mt-10 shadow-lg">3</div>
         <div class="my-5">
-          <span class="text-xs text-amber-600 font-bold block uppercase tracking-wider">තෙවන ස්ථානය (3rd)</span>
+          <span class="text-xs text-amber-600 font-bold block uppercase tracking-wider">3rd Place (Bronze)</span>
           <h3 class="text-3xl font-black text-white mt-1">${label}</h3>
         </div>
         <div class="text-3xl font-black text-amber-500">${third.avg.toFixed(2)} <span class="text-xs text-slate-400 font-normal">/ 10</span></div>
-        <div class="text-xs text-slate-400 font-semibold mt-1">මුළු ලකුණු: ${third.total}</div>
+        <div class="text-xs text-slate-400 font-semibold mt-1">Total Score: ${third.total}</div>
       </div>
     `;
   }

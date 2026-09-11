@@ -1,4 +1,4 @@
-// Synchronized Admin Controller Client
+// Synchronized Admin Controller Client (100% English + Password Protection)
 let socket = null;
 try {
   if (typeof io !== 'undefined') {
@@ -12,16 +12,78 @@ let state = {
   activeCompetition: 'flags',
   activeItemNumber: 1,
   votingOpen: false,
-  totalItems: { flags: 10, emblems: 10 },
+  totalItems: { flags: 15, emblems: 15 },
   judges: [],
   scores: { flags: {}, emblems: {} }
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await loadState();
+  checkAdminAuthStatus();
+  setupLoginForm();
   setupSocketListeners();
 });
 
+// Admin Authentication Helpers
+function getAdminPassword() {
+  return sessionStorage.getItem('adminPassword') || '';
+}
+
+function checkAdminAuthStatus() {
+  const savedPassword = getAdminPassword();
+  const authScreen = document.getElementById('adminAuthScreen');
+
+  if (savedPassword) {
+    authScreen.classList.add('hidden');
+    loadState();
+  } else {
+    authScreen.classList.remove('hidden');
+  }
+}
+
+function setupLoginForm() {
+  const form = document.getElementById('adminLoginForm');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const pwd = document.getElementById('adminPasswordInput').value.trim();
+    const errBox = document.getElementById('adminLoginError');
+
+    if (!pwd) {
+      errBox.textContent = 'Please enter the admin password';
+      errBox.classList.remove('hidden');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: pwd })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        sessionStorage.setItem('adminPassword', pwd);
+        errBox.classList.add('hidden');
+        document.getElementById('adminAuthScreen').classList.add('hidden');
+        await loadState();
+      } else {
+        errBox.textContent = data.message || 'Invalid Admin Password';
+        errBox.classList.remove('hidden');
+      }
+    } catch (err) {
+      errBox.textContent = 'Connection error. Please try again.';
+      errBox.classList.remove('hidden');
+    }
+  });
+}
+
+function adminLogout() {
+  sessionStorage.removeItem('adminPassword');
+  document.getElementById('adminPasswordInput').value = '';
+  document.getElementById('adminAuthScreen').classList.remove('hidden');
+}
+
+// Load State from Backend
 async function loadState() {
   try {
     const res = await fetch('/api/state');
@@ -38,36 +100,47 @@ function renderAdminUI() {
   const comp = state.activeCompetition;
   const isFlags = comp === 'flags';
   const num = state.activeItemNumber;
-  const totalCount = (state.totalItems && state.totalItems[comp]) || 10;
+  const totalCount = (state.totalItems && state.totalItems[comp]) || 15;
+  const formattedNum = num < 10 ? '0' + num : num;
 
-  // 1. Header Tabs
+  // 1. Header Tabs & Badges (2 Distinct Colors: Amber Gold for Flags, Cyan Blue for Emblems)
   const tabFlags = document.getElementById('tabFlags');
   const tabEmblems = document.getElementById('tabEmblems');
   const activeCompHeader = document.getElementById('activeCompHeader');
   const tableTitle = document.getElementById('tableTitle');
+  const activeBoxFrame = document.getElementById('activeBoxFrame');
+  const activeNumberSubtext = document.getElementById('activeNumberSubtext');
 
   if (isFlags) {
     tabFlags.className = 'px-3.5 py-1.5 rounded-lg text-xs font-black transition-all bg-amber-500 text-slate-950 shadow';
     tabEmblems.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white';
     activeCompHeader.className = 'text-xs font-black uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30 px-3 py-1 rounded-lg';
-    activeCompHeader.innerHTML = '<i class="fa-solid fa-flag mr-1"></i> කොඩි තේරීමේ තරඟය (Flags)';
-    tableTitle.textContent = 'කොඩි තරඟයේ සවිස්තරාත්මක ප්‍රතිඵල (Flags Results)';
+    activeCompHeader.innerHTML = '<i class="fa-solid fa-flag mr-1"></i> Flag Competition';
+    tableTitle.textContent = 'Flag Competition Leaderboard & Results';
+    if (activeBoxFrame) activeBoxFrame.className = 'bg-slate-950 border-2 border-amber-500/40 rounded-2xl p-6 text-center my-3 transition-colors';
+    if (activeNumberSubtext) {
+      activeNumberSubtext.className = 'text-xs text-amber-400 font-bold block mt-1';
+      activeNumberSubtext.textContent = `Flag Design #${formattedNum}`;
+    }
   } else {
     tabEmblems.className = 'px-3.5 py-1.5 rounded-lg text-xs font-black transition-all bg-cyan-500 text-slate-950 shadow';
     tabFlags.className = 'px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white';
     activeCompHeader.className = 'text-xs font-black uppercase tracking-wider bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 px-3 py-1 rounded-lg';
-    activeCompHeader.innerHTML = '<i class="fa-solid fa-shield-halved mr-1"></i> ලාංඡන තේරීමේ තරඟය (Emblems)';
-    tableTitle.textContent = 'ලාංඡන තරඟයේ සවිස්තරාත්මක ප්‍රතිඵල (Emblems Results)';
+    activeCompHeader.innerHTML = '<i class="fa-solid fa-shield-halved mr-1"></i> Emblem Competition';
+    tableTitle.textContent = 'Emblem Competition Leaderboard & Results';
+    if (activeBoxFrame) activeBoxFrame.className = 'bg-slate-950 border-2 border-cyan-500/40 rounded-2xl p-6 text-center my-3 transition-colors';
+    if (activeNumberSubtext) {
+      activeNumberSubtext.className = 'text-xs text-cyan-400 font-bold block mt-1';
+      activeNumberSubtext.textContent = `Emblem Design #${formattedNum}`;
+    }
   }
 
   // Update CSV export link
   document.getElementById('btnExportCsv').href = `/api/export/csv?competition=${comp}`;
 
   // 2. Active Number Visual & Total Items Input
-  const formattedNum = num < 10 ? '0' + num : num;
   document.getElementById('activeNumberText').textContent = formattedNum;
-  document.getElementById('activeNumberSubtext').textContent = `${isFlags ? 'Flag' : 'Emblem'} Number ${formattedNum}`;
-  document.getElementById('matrixHeader').textContent = `අංක ${formattedNum} සඳහා විනිශ්චයකරුවන් 20 දෙනාගේ තත්ත්වය`;
+  document.getElementById('matrixHeader').textContent = `Live Submissions for Design #${formattedNum}`;
   document.getElementById('inputTotalItems').value = totalCount;
 
   // 3. Number Pills (1 to totalCount)
@@ -100,11 +173,11 @@ function renderAdminUI() {
   if (state.votingOpen) {
     btnVoting.className = 'w-full py-4 rounded-2xl font-black text-base transition-all shadow-xl flex items-center justify-center space-x-2.5 bg-red-500 hover:bg-red-600 text-white active:scale-[0.98] animate-pulse';
     btnIcon.className = 'fa-solid fa-stop text-lg';
-    btnText.textContent = `🔴 ලකුණු ලබාදීම අවසන් කරන්න (Close Voting for #${formattedNum})`;
+    btnText.textContent = `Close Voting for Design #${formattedNum}`;
   } else {
     btnVoting.className = 'w-full py-4 rounded-2xl font-black text-base transition-all shadow-xl flex items-center justify-center space-x-2.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 active:scale-[0.98]';
     btnIcon.className = 'fa-solid fa-play text-lg';
-    btnText.textContent = `🟢 ලකුණු ලබාදීම ආරම්භ කරන්න (Open Voting for #${formattedNum})`;
+    btnText.textContent = `Open Voting for Design #${formattedNum}`;
   }
 
   // 5. Render 20 Judges Grid
@@ -184,7 +257,7 @@ function renderResultsTable() {
   const isFlags = comp === 'flags';
   const judges = state.judges || [];
   const compScores = (state.scores && state.scores[comp]) || {};
-  const totalCount = (state.totalItems && state.totalItems[comp]) || 10;
+  const totalCount = (state.totalItems && state.totalItems[comp]) || 15;
 
   // Build header dynamically
   let headerHtml = `
@@ -250,11 +323,12 @@ function renderResultsTable() {
     });
 
     const label = `${isFlags ? 'Flag' : 'Emblem'} #${row.number < 10 ? '0' + row.number : row.number}`;
+    const badgeColor = isFlags ? 'text-amber-400 border-amber-500/30' : 'text-cyan-400 border-cyan-500/30';
 
     tr.innerHTML = `
       <td class="p-3 text-center">${rankBadge}</td>
       <td class="p-3 font-bold text-white flex items-center space-x-2">
-        <span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-amber-400 text-xs">${label}</span>
+        <span class="px-2 py-0.5 rounded bg-slate-800 border ${badgeColor} text-xs font-bold">${label}</span>
       </td>
       ${judgeCells}
       <td class="p-3 text-center font-black text-sm text-amber-400">${row.total}</td>
@@ -265,12 +339,15 @@ function renderResultsTable() {
   });
 }
 
-// Controller Actions
+// Controller Actions (Protected with Admin Password)
 async function setCompetition(competition) {
   try {
     const res = await fetch('/api/admin/set-round', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-password': getAdminPassword()
+      },
       body: JSON.stringify({ competition, itemNumber: 1, votingOpen: false })
     });
     const data = await res.json();
@@ -279,9 +356,11 @@ async function setCompetition(competition) {
       state.activeItemNumber = data.activeItemNumber;
       state.votingOpen = data.votingOpen;
       renderAdminUI();
+    } else {
+      alert(data.message || 'Action unauthorized');
     }
   } catch (err) {
-    alert('දෝෂයකි');
+    alert('Connection error. Please try again.');
   }
 }
 
@@ -289,23 +368,28 @@ async function setNumber(itemNumber) {
   try {
     const res = await fetch('/api/admin/set-round', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ itemNumber, votingOpen: false }) // close voting when switching number to avoid accidental votes
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-password': getAdminPassword()
+      },
+      body: JSON.stringify({ itemNumber, votingOpen: false })
     });
     const data = await res.json();
     if (data.success) {
       state.activeItemNumber = data.activeItemNumber;
       state.votingOpen = data.votingOpen;
       renderAdminUI();
+    } else {
+      alert(data.message || 'Action unauthorized');
     }
   } catch (err) {
-    alert('දෝෂයකි');
+    alert('Connection error. Please try again.');
   }
 }
 
 function navigateNumber(delta) {
   const comp = state.activeCompetition;
-  const totalCount = (state.totalItems && state.totalItems[comp]) || 10;
+  const totalCount = (state.totalItems && state.totalItems[comp]) || 15;
   const nextNum = state.activeItemNumber + delta;
   if (nextNum >= 1 && nextNum <= totalCount) {
     setNumber(nextNum);
@@ -317,16 +401,21 @@ async function toggleVoting() {
   try {
     const res = await fetch('/api/admin/set-round', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-password': getAdminPassword()
+      },
       body: JSON.stringify({ votingOpen: newStatus })
     });
     const data = await res.json();
     if (data.success) {
       state.votingOpen = data.votingOpen;
       renderAdminUI();
+    } else {
+      alert(data.message || 'Action unauthorized');
     }
   } catch (err) {
-    alert('දෝෂයකි');
+    alert('Connection error. Please try again.');
   }
 }
 
@@ -334,35 +423,45 @@ async function updateTotalItems(count) {
   try {
     const res = await fetch('/api/admin/set-total-items', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-password': getAdminPassword()
+      },
       body: JSON.stringify({ competition: state.activeCompetition, count })
     });
     const data = await res.json();
     if (data.success) {
       state.totalItems = data.totalItems;
       renderAdminUI();
+    } else {
+      alert(data.message || 'Action unauthorized');
     }
   } catch (err) {
-    alert('දෝෂයකි');
+    alert('Connection error. Please try again.');
   }
 }
 
 async function confirmResetScores() {
-  const compName = state.activeCompetition === 'flags' ? 'කොඩි (Flags)' : 'ලාංඡන (Emblems)';
-  if (confirm(`ඔබට ${compName} තරඟයේ සියලු ලකුණු Reset කිරීමට අවශ්‍ය බව තහවුරු කරන්නද?`)) {
+  const compName = state.activeCompetition === 'flags' ? 'Flag Competition' : 'Emblem Competition';
+  if (confirm(`Are you sure you want to reset all scores for ${compName}? This cannot be undone.`)) {
     try {
       const res = await fetch('/api/admin/reset-scores', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': getAdminPassword()
+        },
         body: JSON.stringify({ competition: state.activeCompetition })
       });
       const data = await res.json();
       if (data.success) {
         state.scores[state.activeCompetition] = {};
         renderAdminUI();
+      } else {
+        alert(data.message || 'Action unauthorized');
       }
     } catch (err) {
-      alert('Reset කිරීමේ දෝෂයකි');
+      alert('Connection error. Please try again.');
     }
   }
 }
@@ -406,4 +505,4 @@ window.navigateNumber = navigateNumber;
 window.toggleVoting = toggleVoting;
 window.updateTotalItems = updateTotalItems;
 window.confirmResetScores = confirmResetScores;
-
+window.adminLogout = adminLogout;

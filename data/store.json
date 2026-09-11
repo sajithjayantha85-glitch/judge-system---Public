@@ -222,8 +222,8 @@
     "flags": {
       "1": {
         "1": {
-          "score": 9,
-          "submittedAt": "2026-09-11T04:30:23.151Z"
+          "score": 10,
+          "submittedAt": "2026-09-11T05:04:19.908Z"
         }
       },
       "flag-1": {
@@ -251,7 +251,7 @@
     "emblems": {}
   },
   "activeItemNumber": 1,
-  "votingOpen": false,
+  "votingOpen": true,
   "totalItems": {
     "flags": 15,
     "emblems": 15

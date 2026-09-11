@@ -1,4 +1,4 @@
-// Ultra-Simplified Synchronized Judge Client
+// Ultra-Simplified Synchronized Judge Client (100% English)
 const socket = io();
 
 let currentJudge = null;
@@ -24,13 +24,13 @@ async function loadState() {
 
 function populateJudgeDropdown() {
   const select = document.getElementById('judgeSelect');
-  select.innerHTML = '<option value="">-- තෝරන්න (Select Judge) --</option>';
+  select.innerHTML = '<option value="">-- Select Judge --</option>';
   if (!state || !state.judges) return;
 
   state.judges.forEach(j => {
     const opt = document.createElement('option');
     opt.value = j.id;
-    opt.textContent = `${j.name} (විනිශ්චයකාර ${j.id})`;
+    opt.textContent = `${j.name} (Judge ID: ${j.id})`;
     select.appendChild(opt);
   });
 }
@@ -50,7 +50,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
   const judgeId = document.getElementById('judgeSelect').value;
   const pin = document.getElementById('pinInput').value;
   if (!judgeId || !pin) {
-    showLoginError('කරුණාකර විනිශ්චයකාර අංකය සහ PIN ඇතුළත් කරන්න');
+    showLoginError('Please select your Judge ID and enter your PIN');
     return;
   }
   await performLogin(judgeId, pin);
@@ -73,10 +73,10 @@ async function performLogin(judgeId, pin) {
       socket.emit('register', { role: 'judge', judgeId: currentJudge.id });
       renderJudgeView();
     } else {
-      showLoginError(data.message || 'පිවිසීම අසාර්ථකයි');
+      showLoginError(data.message || 'Authentication failed. Please check PIN.');
     }
   } catch (err) {
-    showLoginError('සම්බන්ධතා දෝෂයකි. නැවත උත්සාහ කරන්න.');
+    showLoginError('Connection error. Please try again.');
   }
 }
 
@@ -93,26 +93,29 @@ function renderJudgeView() {
   const comp = state.activeCompetition;
   const num = state.activeItemNumber;
   const isFlags = comp === 'flags';
+  const formattedNum = num < 10 ? '0' + num : num;
 
   // Badges & Labels with Distinct Colors
   const compNameBadge = document.getElementById('compNameBadge');
   const votingOpenCard = document.getElementById('votingOpenCard');
-  const compLabel = isFlags ? 'කොඩි තේරීමේ තරඟය' : 'ලාංඡන තේරීමේ තරඟය';
+  const activeBoxJudge = document.getElementById('activeBoxJudge');
+  const compLabel = isFlags ? 'Flag Competition (15 Flags)' : 'Emblem Competition (15 Emblems)';
   
   if (isFlags) {
     compNameBadge.className = 'text-xs font-black px-3 py-1 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30';
-    compNameBadge.innerHTML = '<i class="fa-solid fa-flag mr-1"></i> කොඩි තරඟය';
+    compNameBadge.innerHTML = '<i class="fa-solid fa-flag mr-1"></i> Flag Competition';
     votingOpenCard.className = 'hidden bg-slate-900 border-2 border-amber-500/50 rounded-3xl p-6 shadow-2xl text-center flex flex-col items-center';
+    if (activeBoxJudge) activeBoxJudge.className = 'my-4 w-full bg-slate-950 border-2 border-amber-500/50 rounded-2xl py-5 px-6 flex flex-col items-center justify-center shadow-inner';
   } else {
     compNameBadge.className = 'text-xs font-black px-3 py-1 rounded-full bg-cyan-500/15 text-cyan-400 border border-cyan-500/30';
-    compNameBadge.innerHTML = '<i class="fa-solid fa-shield-halved mr-1"></i> ලාංඡන තරඟය';
+    compNameBadge.innerHTML = '<i class="fa-solid fa-shield-halved mr-1"></i> Emblem Competition';
     votingOpenCard.className = 'hidden bg-slate-900 border-2 border-cyan-500/50 rounded-3xl p-6 shadow-2xl text-center flex flex-col items-center';
+    if (activeBoxJudge) activeBoxJudge.className = 'my-4 w-full bg-slate-950 border-2 border-cyan-500/50 rounded-2xl py-5 px-6 flex flex-col items-center justify-center shadow-inner';
   }
 
   document.getElementById('activeCompLabel').textContent = compLabel;
 
-  const formattedNum = num < 10 ? '0' + num : num;
-  const numText = `නිර්මාණ අංක ${formattedNum}`;
+  const numText = `Design #${formattedNum}`;
   document.getElementById('activeNumberDigits').textContent = formattedNum;
   document.getElementById('activeItemNumberDisplay').textContent = numText;
 
@@ -131,7 +134,7 @@ function renderJudgeView() {
 
   if (existingScore && typeof existingScore.score === 'number') {
     // 1. Judge has already scored this item
-    document.getElementById('doneItemTitle').textContent = `${numText} සඳහා ලකුණු සටහන් විය!`;
+    document.getElementById('doneItemTitle').textContent = `Score Recorded for Design #${formattedNum}!`;
     document.getElementById('submittedScoreValue').textContent = existingScore.score;
     cardDone.classList.remove('hidden');
   } else if (state.votingOpen) {
@@ -174,16 +177,15 @@ async function submitScore(val) {
 
       renderJudgeView();
     } else {
-      alert(data.message || 'ලකුණු සටහන් කිරීම අසාර්ථකයි');
+      alert(data.message || 'Score submission failed');
     }
   } catch (err) {
-    alert('සම්බන්ධතා දෝෂයකි');
+    alert('Connection error. Please try again.');
   }
 }
 
 // Socket Listeners
 function setupSocketListeners() {
-  // Live round or voting status change by Admin
   socket.on('round-changed', (data) => {
     if (!state) return;
     state.activeCompetition = data.activeCompetition;
@@ -192,7 +194,6 @@ function setupSocketListeners() {
     renderJudgeView();
   });
 
-  // Score updated
   socket.on('score-updated', (data) => {
     if (!state) return;
     if (!state.scores[data.competition]) state.scores[data.competition] = {};

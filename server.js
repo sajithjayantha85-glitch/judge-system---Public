@@ -78,34 +78,57 @@ app.post('/api/judge/login', (req, res) => {
   const judge = state.judges.find(j => j.id === numericId);
 
   if (!judge) {
-    return res.status(404).json({ success: false, message: 'විනිශ්චයකාර අංකය හමු නොවීය' });
+    return res.status(404).json({ success: false, message: 'Judge ID not found' });
   }
 
   if (judge.pin && judge.pin !== pin?.trim()) {
-    return res.status(401).json({ success: false, message: 'වැරදි PIN අංකයකි' });
+    return res.status(401).json({ success: false, message: 'Invalid PIN' });
   }
 
   res.json({ success: true, judge: { id: judge.id, name: judge.name } });
 });
+
+// Admin Login / Verification
+app.post('/api/admin/login', (req, res) => {
+  const { password } = req.body;
+  const configuredPassword = state.adminPassword || 'admin2026';
+
+  if (password && password.trim() === configuredPassword) {
+    res.json({ success: true, message: 'Authentication successful' });
+  } else {
+    res.status(401).json({ success: false, message: 'Invalid Admin Password' });
+  }
+});
+
+// Admin Authorization Middleware
+function checkAdminAuth(req, res, next) {
+  const configuredPassword = state.adminPassword || 'admin2026';
+  const providedPassword = req.headers['x-admin-password'] || req.body.adminPassword;
+
+  if (providedPassword && providedPassword.trim() === configuredPassword) {
+    return next();
+  }
+  return res.status(401).json({ success: false, message: 'Unauthorized: Invalid Admin Password' });
+}
 
 // Submit Score (Judge)
 app.post('/api/score', (req, res) => {
   const { judgeId, pin, score } = req.body;
 
   if (!state.votingOpen) {
-    return res.status(403).json({ success: false, message: 'මෙම අවස්ථාවේ ලකුණු ලබාදීම වසා ඇත (Voting is closed)' });
+    return res.status(403).json({ success: false, message: 'Voting is currently closed for this design' });
   }
 
   const numericJudgeId = parseInt(judgeId, 10);
   const numericScore = parseInt(score, 10);
 
   if (isNaN(numericScore) || numericScore < 1 || numericScore > 10) {
-    return res.status(400).json({ success: false, message: 'ලකුණු 1 සිට 10 දක්වා පමණක් ලබාදිය හැක' });
+    return res.status(400).json({ success: false, message: 'Score must be an integer between 1 and 10' });
   }
 
   const judge = state.judges.find(j => j.id === numericJudgeId);
   if (!judge || judge.pin !== pin?.trim()) {
-    return res.status(401).json({ success: false, message: 'අවලංගු විනිශ්චයකාර පිවිසුමකි' });
+    return res.status(401).json({ success: false, message: 'Unauthorized: Invalid Judge Credentials' });
   }
 
   const comp = state.activeCompetition;
@@ -133,8 +156,8 @@ app.post('/api/score', (req, res) => {
   res.json({ success: true, submission, itemNumber: state.activeItemNumber });
 });
 
-// Admin: Set Active Round & Voting Status
-app.post('/api/admin/set-round', (req, res) => {
+// Admin: Set Active Round & Voting Status (Protected)
+app.post('/api/admin/set-round', checkAdminAuth, (req, res) => {
   const { competition, itemNumber, votingOpen } = req.body;
 
   if (competition && (competition === 'flags' || competition === 'emblems')) {
@@ -163,8 +186,8 @@ app.post('/api/admin/set-round', (req, res) => {
   });
 });
 
-// Admin: Update total number of items (flags/emblems)
-app.post('/api/admin/set-total-items', (req, res) => {
+// Admin: Update total number of items (flags/emblems) (Protected)
+app.post('/api/admin/set-total-items', checkAdminAuth, (req, res) => {
   const { competition, count } = req.body;
   const num = parseInt(count, 10);
   if (state.totalItems[competition] && num > 0) {
@@ -177,8 +200,8 @@ app.post('/api/admin/set-total-items', (req, res) => {
   }
 });
 
-// Admin: Reset Scores
-app.post('/api/admin/reset-scores', (req, res) => {
+// Admin: Reset Scores (Protected)
+app.post('/api/admin/reset-scores', checkAdminAuth, (req, res) => {
   const { competition } = req.body;
   if (competition === 'all') {
     state.scores = { flags: {}, emblems: {} };

@@ -1,92 +1,133 @@
 <!DOCTYPE html>
-<html lang="si" class="h-full bg-slate-950 text-slate-100">
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Control Panel | පාලක පුවරුව</title>
+  <title>Admin Control Panel | Judging System</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;600;700;900&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script src="/socket.io/socket.io.js"></script>
   <style>
-    body { font-family: 'Inter', 'Noto Sans Sinhala', sans-serif; }
+    body { font-family: 'Inter', sans-serif; }
   </style>
 </head>
-<body class="h-full flex flex-col justify-between">
+<body class="h-full flex flex-col justify-between select-none">
 
-  <!-- Top Navigation -->
-  <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 px-6 py-3.5">
+  <!-- ================= ADMIN LOGIN SCREEN ================= -->
+  <div id="adminAuthScreen" class="fixed inset-0 z-50 bg-slate-950 flex flex-col justify-center items-center px-6">
+    <div class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-3xl p-7 shadow-2xl">
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 rounded-2xl bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center text-3xl mx-auto mb-3 shadow-lg shadow-blue-500/10">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <h2 class="text-2xl font-black text-white">Admin Authentication</h2>
+        <p class="text-xs text-slate-400 mt-1">Enter password to access control panel</p>
+      </div>
+
+      <form id="adminLoginForm" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1.5">Admin Password</label>
+          <input type="password" id="adminPasswordInput" placeholder="Enter Admin Password" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-center text-base font-bold focus:outline-none focus:border-blue-500 placeholder:text-slate-500 placeholder:text-xs">
+        </div>
+
+        <div id="adminLoginError" class="hidden text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-2.5 rounded-xl text-center"></div>
+
+        <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-extrabold rounded-xl shadow-lg shadow-blue-500/25 transition-all">
+          Access Control Panel
+        </button>
+      </form>
+
+      <div class="mt-4 text-center">
+        <a href="/" class="text-xs text-slate-500 hover:text-slate-400 transition-colors">
+          <i class="fa-solid fa-arrow-left mr-1"></i> Back to Home
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TOP NAVIGATION ================= -->
+  <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 px-6 py-3">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Left: Brand & Home Link -->
       <div class="flex items-center space-x-3">
         <a href="/" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 flex items-center space-x-2 text-xs font-bold transition-all shadow-sm">
           <i class="fa-solid fa-house"></i>
-          <span>මුල් පිටුව (Home)</span>
+          <span>Home</span>
         </a>
         <div class="h-6 w-px bg-slate-800"></div>
         <div>
-          <h1 class="text-base font-bold text-white leading-tight">සජීවී විනිශ්චය පාලක පුවරුව (Admin Dashboard)</h1>
+          <h1 class="text-base font-black text-white leading-tight">Admin Control Panel</h1>
           <p class="text-xs text-slate-400">Live Synchronized Judging Controller</p>
         </div>
       </div>
 
-      <!-- Actions -->
-      <div class="flex items-center space-x-3 flex-wrap">
+      <!-- Right: Actions & Logout -->
+      <div class="flex items-center space-x-2.5 flex-wrap">
         <!-- Switch Competition -->
         <div class="bg-slate-800 p-1 rounded-xl flex border border-slate-700">
-          <button id="tabFlags" onclick="setCompetition('flags')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all bg-amber-500 text-white shadow">
-            <i class="fa-solid fa-flag mr-1"></i> කොඩි තරඟය
+          <button id="tabFlags" onclick="setCompetition('flags')" class="px-3.5 py-1.5 rounded-lg text-xs font-black transition-all bg-amber-500 text-slate-950 shadow">
+            <i class="fa-solid fa-flag mr-1"></i> Flag Competition
           </button>
           <button id="tabEmblems" onclick="setCompetition('emblems')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white">
-            <i class="fa-solid fa-shield-halved mr-1"></i> ලාංඡන තරඟය
+            <i class="fa-solid fa-shield-halved mr-1"></i> Emblem Competition
           </button>
         </div>
 
-        <!-- CSV Export -->
+        <!-- Excel Export -->
         <a id="btnExportCsv" href="/api/export/csv" class="px-3.5 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition-all">
           <i class="fa-solid fa-file-excel"></i>
-          <span>Excel Export</span>
+          <span>Export Excel</span>
         </a>
 
-        <!-- Open Display -->
+        <!-- Projector View -->
         <a href="/display.html" target="_blank" class="px-3 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700">
           <i class="fa-solid fa-arrow-up-right-from-square"></i>
-          <span>Projector View</span>
+          <span>Projector</span>
         </a>
+
+        <!-- Logout -->
+        <button onclick="adminLogout()" class="px-3 py-2 rounded-xl text-xs font-bold flex items-center space-x-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-colors" title="Lock & Logout">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>Logout</span>
+        </button>
       </div>
+
     </div>
   </header>
 
-  <!-- Main Container -->
+  <!-- ================= MAIN CONTAINER ================= -->
   <main class="max-w-7xl mx-auto px-6 py-6 w-full space-y-6 flex-1">
 
-    <!-- TOP SECTION: BIG LIVE ITEM CONTROLLER & 20 JUDGES MATRIX -->
+    <!-- TOP SECTION: LIVE ITEM CONTROLLER & 20 JUDGES MATRIX -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
       <!-- Left Column: Active Item & Big Voting Toggle (5 cols) -->
       <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between">
         <div>
           <div class="flex items-center justify-between mb-4">
-            <span class="text-xs font-bold text-amber-400 uppercase tracking-wider bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-lg" id="activeCompHeader">
-              කොඩි තේරීමේ තරඟය
+            <span class="text-xs font-black uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30 px-3 py-1 rounded-lg" id="activeCompHeader">
+              <i class="fa-solid fa-flag mr-1"></i> Flag Competition
             </span>
             <div class="flex items-center space-x-2 text-xs text-slate-400">
-              <span>මුළු ගණන:</span>
+              <span>Total Items:</span>
               <input type="number" id="inputTotalItems" min="1" max="50" class="w-12 bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 text-center text-white font-bold" onchange="updateTotalItems(this.value)">
             </div>
           </div>
 
-          <!-- Active Number Visual -->
-          <div class="bg-slate-950 border border-slate-800 rounded-2xl p-6 text-center my-3">
-            <span class="text-xs text-slate-400 font-semibold block uppercase tracking-widest">දැනට තිරගත නිර්මාණය</span>
+          <!-- Active Number Visual Box -->
+          <div id="activeBoxFrame" class="bg-slate-950 border-2 border-amber-500/40 rounded-2xl p-6 text-center my-3 transition-colors">
+            <span class="text-xs text-slate-400 font-bold block uppercase tracking-widest">Active Design on Projector</span>
             <div class="text-6xl font-black text-white mt-1" id="activeNumberText">
               01
             </div>
-            <span class="text-xs text-slate-400 block mt-1" id="activeNumberSubtext">Design Number 01</span>
+            <span class="text-xs text-amber-400 font-bold block mt-1" id="activeNumberSubtext">Flag Design #01</span>
           </div>
 
           <!-- Quick Number Selector -->
           <div class="my-4">
-            <label class="block text-xs font-semibold text-slate-400 mb-1.5">අංකය තෝරන්න (Select Number):</label>
+            <label class="block text-xs font-bold text-slate-400 mb-1.5">Select Design Number (1 to 15):</label>
             <div id="numberPills" class="flex space-x-1.5 overflow-x-auto pb-2 scrollbar-none">
               <!-- Number buttons 1, 2, 3... -->
             </div>
@@ -98,17 +139,17 @@
           <!-- Big Toggle Voting Button -->
           <button id="btnToggleVoting" onclick="toggleVoting()" class="w-full py-4 rounded-2xl font-black text-base transition-all shadow-xl flex items-center justify-center space-x-2.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 active:scale-[0.98]">
             <i class="fa-solid fa-play text-lg" id="btnVotingIcon"></i>
-            <span id="btnVotingText">ලකුණු ලබාදීම ආරම්භ කරන්න (Open Voting)</span>
+            <span id="btnVotingText">Open Voting for Design #01</span>
           </button>
 
           <!-- Prev / Next Number -->
           <div class="flex items-center space-x-2">
             <button onclick="navigateNumber(-1)" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs flex items-center justify-center space-x-1.5 transition-all">
               <i class="fa-solid fa-chevron-left"></i>
-              <span>කලින් අංකය</span>
+              <span>Previous Design</span>
             </button>
             <button onclick="navigateNumber(1)" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs flex items-center justify-center space-x-1.5 transition-all">
-              <span>ඊළඟ අංකය</span>
+              <span>Next Design</span>
               <i class="fa-solid fa-chevron-right"></i>
             </button>
           </div>
@@ -122,17 +163,17 @@
             <div>
               <h2 class="text-base font-bold text-white flex items-center space-x-2">
                 <i class="fa-solid fa-users text-amber-400"></i>
-                <span id="matrixHeader">අංක 01 සඳහා විනිශ්චයකරුවන් 20 දෙනාගේ තත්ත්වය</span>
+                <span id="matrixHeader">Live Submissions for Design #01</span>
               </h2>
-              <p class="text-xs text-slate-400 mt-0.5">ලකුණු ලැබෙන විට ක්ෂණිකව කොළ පැහැයෙන් සටහන් වේ</p>
+              <p class="text-xs text-slate-400 mt-0.5">Judges' scores turn green in real-time as they submit</p>
             </div>
             <div class="text-right">
               <span id="matrixRatio" class="text-2xl font-black text-amber-400">0 / 20</span>
-              <span class="text-[10px] text-slate-400 block font-semibold">Submitted</span>
+              <span class="text-[10px] text-slate-400 block font-semibold uppercase tracking-wider">Submitted</span>
             </div>
           </div>
 
-          <!-- 20 Judges Grid (2 rows of 10 or 4 rows of 5) -->
+          <!-- 20 Judges Grid -->
           <div id="judgesGrid" class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-10 gap-2.5">
             <!-- Judge 01 to 20 badges -->
           </div>
@@ -141,18 +182,18 @@
         <!-- Active Number Summary -->
         <div class="mt-6 pt-4 border-t border-slate-800 grid grid-cols-3 gap-4 text-center">
           <div class="bg-slate-800/60 p-3 rounded-2xl border border-slate-800">
-            <span class="text-[11px] text-slate-400 font-semibold block">මුළු ලකුණු (Total)</span>
-            <span id="statTotal" class="text-xl font-bold text-white">0</span>
+            <span class="text-[11px] text-slate-400 font-bold block">Total Score</span>
+            <span id="statTotal" class="text-xl font-black text-white">0</span>
             <span class="text-[10px] text-slate-500 block">out of 200</span>
           </div>
           <div class="bg-slate-800/60 p-3 rounded-2xl border border-slate-800">
-            <span class="text-[11px] text-slate-400 font-semibold block">සාමාන්‍යය (Average)</span>
-            <span id="statAvg" class="text-xl font-bold text-amber-400">0.00</span>
+            <span class="text-[11px] text-slate-400 font-bold block">Average Score</span>
+            <span id="statAvg" class="text-xl font-black text-amber-400">0.00</span>
             <span class="text-[10px] text-slate-500 block">out of 10.0</span>
           </div>
           <div class="bg-slate-800/60 p-3 rounded-2xl border border-slate-800">
-            <span class="text-[11px] text-slate-400 font-semibold block">අවම / උපරිම (Min / Max)</span>
-            <span id="statMinMax" class="text-xl font-bold text-emerald-400">- / -</span>
+            <span class="text-[11px] text-slate-400 font-bold block">Min / Max</span>
+            <span id="statMinMax" class="text-xl font-black text-emerald-400">- / -</span>
             <span class="text-[10px] text-slate-500 block">Scale 1-10</span>
           </div>
         </div>
@@ -166,14 +207,14 @@
         <div>
           <h2 class="text-lg font-bold text-white flex items-center space-x-2">
             <i class="fa-solid fa-ranking-star text-amber-400"></i>
-            <span id="tableTitle">සවිස්තරාත්මක ප්‍රතිඵල සටහන (Results Table)</span>
+            <span id="tableTitle">Competition Leaderboard & Detailed Scores</span>
           </h2>
-          <p class="text-xs text-slate-400">ස්වයංක්‍රීයව ඉහළම සාමාන්‍ය ලකුණු අනුව ශ්‍රේණිගත වේ</p>
+          <p class="text-xs text-slate-400">Ranked dynamically by highest average score</p>
         </div>
 
         <div>
           <button onclick="confirmResetScores()" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-all">
-            <i class="fa-solid fa-rotate-left mr-1"></i> ලකුණු Reset කරන්න
+            <i class="fa-solid fa-rotate-left mr-1"></i> Reset Scores
           </button>
         </div>
       </div>
