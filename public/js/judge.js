@@ -258,6 +258,13 @@ function setupSocketListeners() {
     renderJudgeView();
   });
 
+  socket.on('images-synced', (data) => {
+    if (data && data.images) {
+      state.images = data.images;
+      renderJudgeView();
+    }
+  });
+
   socket.on('scores-reset', () => loadState());
 }
 

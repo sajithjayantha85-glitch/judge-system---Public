@@ -89,6 +89,8 @@ async function loadState() {
     const res = await fetch('/api/state');
     state = await res.json();
     renderAdminUI();
+    // Auto-sync persistent client artworks in background
+    autoSyncArtworksWithServer();
   } catch (err) {
     console.error('Failed to load state:', err);
   }
@@ -494,6 +496,162 @@ async function updateTotalItems(count) {
   }
 }
 
+// ================= PERSISTENT ARTWORK DATABASE (IndexedDB) =================
+const artworkDB = {
+  db: null,
+  async init() {
+    if (this.db) return this.db;
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open('JudgeArtworksDB', 1);
+      request.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('artworks')) {
+          db.createObjectStore('artworks', { keyPath: 'id' });
+        }
+      };
+      request.onsuccess = (e) => {
+        this.db = e.target.result;
+        resolve(this.db);
+      };
+      request.onerror = (e) => reject(e.target.error);
+    });
+  },
+  async saveArtwork(competition, itemNumber, dataUrl, filename, url) {
+    try {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('artworks', 'readwrite');
+        const store = tx.objectStore('artworks');
+        const record = {
+          id: `${competition}_${itemNumber}`,
+          competition,
+          itemNumber: parseInt(itemNumber, 10),
+          dataUrl: dataUrl || url,
+          url: url || dataUrl,
+          filename: filename || 'artwork.png',
+          updatedAt: new Date().toISOString()
+        };
+        const req = store.put(record);
+        req.onsuccess = () => resolve(record);
+        req.onerror = (e) => reject(e.target.error);
+      });
+    } catch (err) {
+      console.warn('Could not save to IndexedDB:', err);
+    }
+  },
+  async getAllArtworks() {
+    try {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('artworks', 'readonly');
+        const store = tx.objectStore('artworks');
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = (e) => reject(e.target.error);
+      });
+    } catch (err) {
+      console.warn('Could not read from IndexedDB:', err);
+      return [];
+    }
+  },
+  async deleteArtwork(competition, itemNumber) {
+    try {
+      const db = await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('artworks', 'readwrite');
+        const store = tx.objectStore('artworks');
+        const req = store.delete(`${competition}_${itemNumber}`);
+        req.onsuccess = () => resolve();
+        req.onerror = (e) => reject(e.target.error);
+      });
+    } catch (err) {
+      console.warn('Could not delete from IndexedDB:', err);
+    }
+  }
+};
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// Auto-sync persistent client artworks with server
+async function autoSyncArtworksWithServer() {
+  try {
+    const localArtworks = await artworkDB.getAllArtworks();
+    if (!localArtworks || localArtworks.length === 0) {
+      // Check if server has artworks we can cache locally
+      cacheServerArtworksToLocal();
+      updateSyncStatusBadge(true, 'Saved in Browser & Synced');
+      return;
+    }
+
+    // Check if server is missing any local artworks
+    const missingOnServer = [];
+    localArtworks.forEach(item => {
+      const serverComp = state.images && state.images[item.competition];
+      const serverUrl = serverComp && serverComp[item.itemNumber.toString()];
+      if (!serverUrl) {
+        missingOnServer.push(item);
+      }
+    });
+
+    if (missingOnServer.length > 0) {
+      updateSyncStatusBadge(false, `Restoring ${missingOnServer.length} artworks...`);
+      const res = await fetch('/api/admin/sync-images', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': getAdminPassword()
+        },
+        body: JSON.stringify({ artworks: missingOnServer })
+      });
+      const data = await res.json();
+      if (data.success && data.images) {
+        state.images = data.images;
+        renderAdminUI();
+        updateSyncStatusBadge(true, `${missingOnServer.length} Artworks Restored`);
+      }
+    } else {
+      updateSyncStatusBadge(true, 'Saved in Browser & Synced');
+    }
+  } catch (err) {
+    console.error('Auto-sync error:', err);
+    updateSyncStatusBadge(false, 'Sync pending');
+  }
+}
+
+// Cache any existing server URLs to local DB
+async function cacheServerArtworksToLocal() {
+  if (!state || !state.images) return;
+  for (const comp of ['flags', 'emblems', 'stamps']) {
+    const compImgs = state.images[comp] || {};
+    for (const [numStr, url] of Object.entries(compImgs)) {
+      if (url) {
+        await artworkDB.saveArtwork(comp, parseInt(numStr, 10), null, url.split('/').pop(), url);
+      }
+    }
+  }
+}
+
+function updateSyncStatusBadge(isOk, text) {
+  const badge = document.getElementById('artworkSyncBadge');
+  const label = document.getElementById('artworkSyncText');
+  if (!badge || !label) return;
+
+  if (isOk) {
+    badge.className = 'text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md flex items-center space-x-1';
+    label.textContent = text || 'Saved in Browser & Synced';
+  } else {
+    badge.className = 'text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md flex items-center space-x-1 animate-pulse';
+    label.textContent = text || 'Syncing...';
+  }
+}
+
 function triggerImageUpload() {
   const fileInput = document.getElementById('adminFileInput');
   if (fileInput) fileInput.click();
@@ -502,12 +660,22 @@ function triggerImageUpload() {
 async function handleFileSelected(input) {
   if (!input.files || input.files.length === 0) return;
   const file = input.files[0];
+  
+  // Convert to Data URL for client IndexedDB persistence
+  let dataUrl = null;
+  try {
+    dataUrl = await readFileAsDataUrl(file);
+  } catch (e) {
+    console.warn('Could not read file data URL:', e);
+  }
+
   const formData = new FormData();
   formData.append('image', file);
   formData.append('competition', state.activeCompetition);
   formData.append('itemNumber', state.activeItemNumber);
 
   try {
+    updateSyncStatusBadge(false, 'Uploading artwork...');
     const res = await fetch('/api/admin/upload-image', {
       method: 'POST',
       headers: {
@@ -520,14 +688,79 @@ async function handleFileSelected(input) {
       if (!state.images) state.images = { flags: {}, emblems: {}, stamps: {} };
       if (!state.images[state.activeCompetition]) state.images[state.activeCompetition] = {};
       state.images[state.activeCompetition][state.activeItemNumber.toString()] = data.imageUrl;
+
+      // Save into persistent IndexedDB
+      if (dataUrl) {
+        await artworkDB.saveArtwork(state.activeCompetition, state.activeItemNumber, dataUrl, file.name, data.imageUrl);
+      }
+
       renderAdminUI();
+      updateSyncStatusBadge(true, 'Saved in Browser & Synced');
     } else {
       alert(data.message || 'Failed to upload image.');
+      updateSyncStatusBadge(false, 'Upload error');
     }
   } catch (err) {
     alert('Connection error during upload.');
+    updateSyncStatusBadge(false, 'Upload failed');
   } finally {
     input.value = '';
+  }
+}
+
+// Web Link / Image URL handling
+function promptImageUrl() {
+  const modal = document.getElementById('imageUrlModal');
+  const input = document.getElementById('inputWebImageUrl');
+  if (input) input.value = '';
+  if (modal) modal.classList.remove('hidden');
+  if (input) setTimeout(() => input.focus(), 50);
+}
+
+function closeImageUrlModal() {
+  const modal = document.getElementById('imageUrlModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+async function submitImageUrl() {
+  const input = document.getElementById('inputWebImageUrl');
+  const url = input ? input.value.trim() : '';
+  if (!url) {
+    alert('Please enter a valid image URL');
+    return;
+  }
+
+  try {
+    updateSyncStatusBadge(false, 'Saving image URL...');
+    const res = await fetch('/api/admin/set-image-url', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-password': getAdminPassword()
+      },
+      body: JSON.stringify({
+        competition: state.activeCompetition,
+        itemNumber: state.activeItemNumber,
+        imageUrl: url
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      if (!state.images) state.images = { flags: {}, emblems: {}, stamps: {} };
+      if (!state.images[state.activeCompetition]) state.images[state.activeCompetition] = {};
+      state.images[state.activeCompetition][state.activeItemNumber.toString()] = data.imageUrl;
+
+      // Save into persistent IndexedDB
+      await artworkDB.saveArtwork(state.activeCompetition, state.activeItemNumber, null, url.split('/').pop(), data.imageUrl);
+
+      closeImageUrlModal();
+      renderAdminUI();
+      updateSyncStatusBadge(true, 'Artwork URL Saved');
+    } else {
+      alert(data.message || 'Failed to save image URL.');
+    }
+  } catch (err) {
+    alert('Connection error while saving image URL.');
   }
 }
 
@@ -553,12 +786,113 @@ async function removeCurrentImage() {
       if (state.images && state.images[state.activeCompetition]) {
         delete state.images[state.activeCompetition][state.activeItemNumber.toString()];
       }
+      // Remove from IndexedDB
+      await artworkDB.deleteArtwork(state.activeCompetition, state.activeItemNumber);
       renderAdminUI();
+      updateSyncStatusBadge(true, 'Artwork Removed');
     } else {
       alert(data.message || 'Failed to remove image.');
     }
   } catch (err) {
     alert('Connection error. Please try again.');
+  }
+}
+
+// Backup & Restore Artwork Pack
+async function exportArtworkBackup() {
+  try {
+    let backupData;
+    try {
+      const res = await fetch('/api/admin/export-images', {
+        headers: { 'x-admin-password': getAdminPassword() }
+      });
+      if (res.ok) {
+        backupData = await res.json();
+      }
+    } catch (e) {
+      // Fallback
+    }
+
+    if (!backupData || !backupData.artworks || backupData.artworks.length === 0) {
+      const localArtworks = await artworkDB.getAllArtworks();
+      backupData = {
+        success: true,
+        system: 'Department of Examinations, Sri Lanka Judging System',
+        version: '2.0',
+        exportedAt: new Date().toISOString(),
+        totalArtworks: localArtworks.length,
+        artworks: localArtworks
+      };
+    }
+
+    if (!backupData.artworks || backupData.artworks.length === 0) {
+      alert('No uploaded artworks found to backup.');
+      return;
+    }
+
+    const jsonStr = JSON.stringify(backupData, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `judge-artworks-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    alert('Failed to export artwork backup: ' + err.message);
+  }
+}
+
+function triggerImportBackup() {
+  const input = document.getElementById('adminBackupInput');
+  if (input) input.click();
+}
+
+async function handleBackupFileSelected(input) {
+  if (!input.files || input.files.length === 0) return;
+  const file = input.files[0];
+
+  try {
+    const text = await file.text();
+    const parsed = JSON.parse(text);
+    const artworks = parsed.artworks || [];
+    if (!Array.isArray(artworks) || artworks.length === 0) {
+      alert('No valid artworks found in the backup file.');
+      return;
+    }
+
+    updateSyncStatusBadge(false, `Restoring ${artworks.length} artworks...`);
+
+    // 1. Save all to local IndexedDB
+    for (const art of artworks) {
+      await artworkDB.saveArtwork(art.competition, art.itemNumber, art.dataUrl, art.filename, art.url);
+    }
+
+    // 2. Sync to server
+    const res = await fetch('/api/admin/sync-images', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-password': getAdminPassword()
+      },
+      body: JSON.stringify({ artworks })
+    });
+    const data = await res.json();
+    if (data.success) {
+      state.images = data.images;
+      renderAdminUI();
+      alert(`Success! Restored and synced ${data.restoredCount || artworks.length} candidate artworks.`);
+      updateSyncStatusBadge(true, `${artworks.length} Artworks Restored & Synced`);
+    } else {
+      alert(data.message || 'Server failed to sync backup.');
+      updateSyncStatusBadge(false, 'Sync failed');
+    }
+  } catch (err) {
+    alert('Error reading backup file: ' + err.message);
+  } finally {
+    input.value = '';
   }
 }
 
@@ -629,6 +963,13 @@ function setupSocketListeners() {
     renderAdminUI();
   });
 
+  socket.on('images-synced', (data) => {
+    if (data && data.images) {
+      state.images = data.images;
+      renderAdminUI();
+    }
+  });
+
   socket.on('scores-reset', () => loadState());
 }
 
@@ -641,5 +982,11 @@ window.updateTotalItems = updateTotalItems;
 window.confirmResetScores = confirmResetScores;
 window.triggerImageUpload = triggerImageUpload;
 window.handleFileSelected = handleFileSelected;
+window.promptImageUrl = promptImageUrl;
+window.closeImageUrlModal = closeImageUrlModal;
+window.submitImageUrl = submitImageUrl;
 window.removeCurrentImage = removeCurrentImage;
+window.exportArtworkBackup = exportArtworkBackup;
+window.triggerImportBackup = triggerImportBackup;
+window.handleBackupFileSelected = handleBackupFileSelected;
 window.adminLogout = adminLogout;

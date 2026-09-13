@@ -330,6 +330,141 @@ app.post('/api/admin/remove-image', checkAdminAuth, (req, res) => {
   }
 });
 
+// Admin: Set Direct Image URL for a Design Number (Protected)
+app.post('/api/admin/set-image-url', checkAdminAuth, (req, res) => {
+  try {
+    const { competition, itemNumber, imageUrl } = req.body;
+    const num = parseInt(itemNumber, 10);
+    if (!competition || isNaN(num) || num < 1 || !imageUrl) {
+      return res.status(400).json({ success: false, message: 'Invalid parameters or image URL' });
+    }
+
+    if (!state.images) state.images = { flags: {}, emblems: {}, stamps: {} };
+    if (!state.images[competition]) state.images[competition] = {};
+
+    const cleanUrl = imageUrl.trim();
+    state.images[competition][num.toString()] = cleanUrl;
+    saveState();
+
+    io.emit('item-image-updated', {
+      competition,
+      itemNumber: num,
+      imageUrl: cleanUrl
+    });
+
+    res.json({ success: true, imageUrl: cleanUrl, competition, itemNumber: num });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Admin: Batch Sync Artworks from Client IndexedDB / Backup (Protected)
+app.post('/api/admin/sync-images', checkAdminAuth, (req, res) => {
+  try {
+    const { artworks } = req.body;
+    if (!Array.isArray(artworks)) {
+      return res.status(400).json({ success: false, message: 'Invalid artworks array' });
+    }
+
+    if (!state.images) state.images = { flags: {}, emblems: {}, stamps: {} };
+
+    let restoredCount = 0;
+    artworks.forEach(item => {
+      const { competition, itemNumber, dataUrl, url } = item;
+      const num = parseInt(itemNumber, 10);
+      if (!competition || isNaN(num) || num < 1) return;
+      if (!state.images[competition]) state.images[competition] = {};
+
+      let finalUrl = url;
+      if (dataUrl && dataUrl.startsWith('data:image/')) {
+        try {
+          const matches = dataUrl.match(/^data:image\/([a-zA-Z0-9+.-]+);base64,(.+)$/);
+          if (matches) {
+            let ext = matches[1].toLowerCase();
+            if (ext === 'jpeg') ext = 'jpg';
+            else if (ext.includes('svg')) ext = 'svg';
+            else if (!['png', 'jpg', 'webp', 'gif'].includes(ext)) ext = 'png';
+
+            const base64Data = matches[2];
+            const filename = `${competition}-${num}-synced-${Date.now()}.${ext}`;
+            const filePath = path.join(UPLOADS_DIR, filename);
+            fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
+            finalUrl = `/uploads/${filename}`;
+          }
+        } catch (e) {
+          console.error('Error writing synced image file:', e);
+          finalUrl = dataUrl;
+        }
+      }
+
+      if (finalUrl) {
+        state.images[competition][num.toString()] = finalUrl;
+        restoredCount++;
+      }
+    });
+
+    saveState();
+
+    io.emit('images-synced', { images: state.images });
+
+    const currentActiveImg = (state.images[state.activeCompetition] || {})[state.activeItemNumber.toString()] || null;
+    io.emit('item-image-updated', {
+      competition: state.activeCompetition,
+      itemNumber: state.activeItemNumber,
+      imageUrl: currentActiveImg
+    });
+
+    res.json({ success: true, restoredCount, images: state.images });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Admin: Export All Artworks with Base64 Payload for Backup Pack (Protected)
+app.get('/api/admin/export-images', checkAdminAuth, (req, res) => {
+  try {
+    const exportData = [];
+    const competitions = ['flags', 'emblems', 'stamps'];
+
+    competitions.forEach(comp => {
+      const compImages = (state.images && state.images[comp]) || {};
+      for (const [numStr, imgUrl] of Object.entries(compImages)) {
+        if (!imgUrl) continue;
+        let dataUrl = null;
+        if (imgUrl.startsWith('data:image/')) {
+          dataUrl = imgUrl;
+        } else if (imgUrl.startsWith('/uploads/')) {
+          const filePath = path.join(__dirname, 'public', imgUrl.replace(/^\//, ''));
+          if (fs.existsSync(filePath)) {
+            const ext = path.extname(filePath).replace('.', '').toLowerCase() || 'png';
+            const mime = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
+            const fileBuf = fs.readFileSync(filePath);
+            dataUrl = `data:${mime};base64,${fileBuf.toString('base64')}`;
+          }
+        }
+        exportData.push({
+          competition: comp,
+          itemNumber: parseInt(numStr, 10),
+          url: imgUrl,
+          dataUrl: dataUrl || imgUrl,
+          exportedAt: new Date().toISOString()
+        });
+      }
+    });
+
+    res.json({
+      success: true,
+      system: 'Department of Examinations, Sri Lanka Judging System',
+      version: '2.0',
+      exportedAt: new Date().toISOString(),
+      totalArtworks: exportData.length,
+      artworks: exportData
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // Export CSV of Results
 app.get('/api/export/csv', (req, res) => {
   const competition = req.query.competition || state.activeCompetition;

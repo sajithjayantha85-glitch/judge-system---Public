@@ -337,5 +337,12 @@ function setupSocketListeners() {
     renderDisplay();
   });
 
+  socket.on('images-synced', (data) => {
+    if (data && data.images) {
+      state.images = data.images;
+      renderDisplay();
+    }
+  });
+
   socket.on('scores-reset', () => loadState());
 }

@@ -186,7 +186,60 @@ async function testServer() {
     }
     console.log('✅ Artwork image removed and state updated properly');
 
-    console.log('\n🎉 ALL TESTS PASSED! Flags (15), Emblems (15), Stamps (15), and Artwork Image Uploading fully operational!');
+    // 8.2 Test Direct Image URL
+    console.log('8.2 Testing Direct Image URL set endpoint...');
+    const directUrlRes = await request('/api/admin/set-image-url', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-password': 'admin2026'
+      },
+      body: JSON.stringify({
+        competition: 'emblems',
+        itemNumber: 1,
+        imageUrl: 'https://example.com/emblem-01.png'
+      })
+    });
+    if (directUrlRes.status !== 200 || !directUrlRes.body.success || directUrlRes.body.imageUrl !== 'https://example.com/emblem-01.png') {
+      throw new Error(`Direct image URL failed: ${JSON.stringify(directUrlRes.body)}`);
+    }
+    console.log('✅ Direct web image URL saved successfully');
+
+    // 8.3 Test Batch Sync Artworks Endpoint (Base64)
+    console.log('8.3 Testing Batch Sync Artworks Endpoint...');
+    const dummyBase64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+    const syncRes = await request('/api/admin/sync-images', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-password': 'admin2026'
+      },
+      body: JSON.stringify({
+        artworks: [
+          { competition: 'flags', itemNumber: 2, dataUrl: dummyBase64, filename: 'flag2.png' },
+          { competition: 'stamps', itemNumber: 1, dataUrl: dummyBase64, filename: 'stamp1.png' }
+        ]
+      })
+    });
+    if (syncRes.status !== 200 || !syncRes.body.success || syncRes.body.restoredCount !== 2) {
+      throw new Error(`Batch sync failed: ${JSON.stringify(syncRes.body)}`);
+    }
+    console.log('✅ Batch sync restored 2 candidate artworks successfully');
+
+    // 8.4 Test Export Artwork Pack
+    console.log('8.4 Testing Export Artwork Pack Endpoint...');
+    const exportRes = await request('/api/admin/export-images', {
+      headers: { 'x-admin-password': 'admin2026' }
+    });
+    if (exportRes.status !== 200 || !exportRes.body.success || !Array.isArray(exportRes.body.artworks)) {
+      throw new Error(`Export images failed: ${JSON.stringify(exportRes.body)}`);
+    }
+    if (exportRes.body.artworks.length < 3) {
+      throw new Error(`Expected at least 3 exported artworks, got ${exportRes.body.artworks.length}`);
+    }
+    console.log(`✅ Export Artwork Pack verified (${exportRes.body.artworks.length} artworks exported)`);
+
+    console.log('\n🎉 ALL TESTS PASSED! Artwork persistence, Auto-Sync & Backup fully operational!');
     server.close(() => process.exit(0));
   } catch (err) {
     console.error('❌ Test failed:', err.message);
