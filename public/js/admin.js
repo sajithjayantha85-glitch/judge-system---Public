@@ -243,6 +243,7 @@ function renderJudgesGrid() {
   const compScores = (state.scores && state.scores[comp]) || {};
   const activeScores = compScores[num] || {};
   const judges = state.judges || [];
+  const onlineJudges = state.onlineJudges || [];
 
   let submittedCount = 0;
   let totalScore = 0;
@@ -251,6 +252,7 @@ function renderJudgesGrid() {
   judges.forEach(j => {
     const entry = activeScores[j.id];
     const isSubmitted = entry && typeof entry.score === 'number';
+    const isOnline = onlineJudges.includes(j.id);
 
     if (isSubmitted) {
       submittedCount++;
@@ -262,26 +264,47 @@ function renderJudgesGrid() {
     card.className = `p-2.5 rounded-2xl border text-center transition-all flex flex-col justify-between items-center ${
       isSubmitted 
         ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300 shadow-md shadow-emerald-500/15 scale-105' 
-        : 'bg-slate-800/60 border-slate-700/60 text-slate-400'
+        : isOnline
+          ? 'bg-slate-800/90 border-slate-700 text-slate-300 ring-1 ring-emerald-500/40'
+          : 'bg-slate-900/60 border-slate-800/80 text-slate-500 opacity-80'
     }`;
 
     card.innerHTML = `
-      <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">J${j.id < 10 ? '0' + j.id : j.id}</div>
-      <div class="my-1">
+      <div class="flex items-center justify-between w-full px-0.5">
+        <span class="text-[10px] font-black uppercase tracking-wider text-slate-300">J${j.id < 10 ? '0' + j.id : j.id}</span>
+        <span class="flex items-center space-x-1" title="${isOnline ? 'Judge Online & Ready' : 'Judge Offline / Not Logged In'}">
+          <span class="w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-slate-600'}"></span>
+        </span>
+      </div>
+      <div class="my-1.5">
         ${isSubmitted 
           ? `<span class="text-xl font-black text-emerald-400">${entry.score}</span><span class="text-[10px] text-slate-400">/10</span>` 
-          : `<span class="text-xs text-slate-500 font-semibold italic">Waiting</span>`
+          : isOnline
+            ? `<span class="text-[11px] text-amber-400 font-bold">Ready</span>`
+            : `<span class="text-[11px] text-slate-500 font-semibold">Offline</span>`
         }
       </div>
       <div class="text-[9px]">
-        ${isSubmitted ? '<i class="fa-solid fa-circle-check text-emerald-400"></i> Done' : '<span class="w-1.5 h-1.5 rounded-full inline-block bg-slate-600 animate-ping"></span>'}
+        ${isSubmitted 
+          ? '<span class="text-emerald-400 font-bold"><i class="fa-solid fa-circle-check mr-0.5"></i> Done</span>' 
+          : isOnline
+            ? '<span class="text-emerald-400/80 text-[8px] font-semibold"><i class="fa-solid fa-signal mr-0.5"></i> Connected</span>'
+            : '<span class="text-slate-600 text-[8px] font-semibold">Not logged in</span>'
+        }
       </div>
     `;
 
     container.appendChild(card);
   });
 
-  // Stats
+  // Stats & Attendance
+  const onlineCount = onlineJudges.length;
+  const matrixHeader = document.getElementById('matrixHeader');
+  if (matrixHeader) {
+    const formattedNum = state.activeItemNumber < 10 ? '0' + state.activeItemNumber : state.activeItemNumber;
+    matrixHeader.innerHTML = `Live Submissions for Design #${formattedNum} <span class="ml-2 text-xs font-bold ${onlineCount === judges.length ? 'text-emerald-400' : 'text-amber-400'}">(${onlineCount}/${judges.length} Judges Ready 🟢)</span>`;
+  }
+
   document.getElementById('matrixRatio').textContent = `${submittedCount} / ${judges.length}`;
   document.getElementById('statTotal').textContent = totalScore;
   const avg = submittedCount > 0 ? (totalScore / submittedCount).toFixed(2) : '0.00';
@@ -570,6 +593,60 @@ const artworkDB = {
   }
 };
 
+function compressImage(file, maxWidth = 1280, maxHeight = 1280, quality = 0.85) {
+  return new Promise((resolve, reject) => {
+    if (file.type === 'image/svg+xml') {
+      const reader = new FileReader();
+      reader.onload = () => resolve({ dataUrl: reader.result, blob: file });
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+
+      if (width > maxWidth || height > maxHeight) {
+        if (width > height) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        } else {
+          width = Math.round((width * maxHeight) / height);
+          height = maxHeight;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      let mimeType = 'image/webp';
+      let dataUrl = canvas.toDataURL(mimeType, quality);
+      if (!dataUrl.startsWith('data:image/webp')) {
+        mimeType = 'image/jpeg';
+        dataUrl = canvas.toDataURL(mimeType, quality);
+      }
+
+      canvas.toBlob((blob) => {
+        resolve({ dataUrl, blob: blob || file });
+      }, mimeType, quality);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      const reader = new FileReader();
+      reader.onload = () => resolve({ dataUrl: reader.result, blob: file });
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    };
+    img.src = url;
+  });
+}
+
 function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -579,12 +656,11 @@ function readFileAsDataUrl(file) {
   });
 }
 
-// Auto-sync persistent client artworks with server
+// Auto-sync persistent client artworks with server (batched to prevent payload limits)
 async function autoSyncArtworksWithServer() {
   try {
     const localArtworks = await artworkDB.getAllArtworks();
     if (!localArtworks || localArtworks.length === 0) {
-      // Check if server has artworks we can cache locally
       cacheServerArtworksToLocal();
       updateSyncStatusBadge(true, 'Saved in Browser & Synced');
       return;
@@ -602,20 +678,24 @@ async function autoSyncArtworksWithServer() {
 
     if (missingOnServer.length > 0) {
       updateSyncStatusBadge(false, `Restoring ${missingOnServer.length} artworks...`);
-      const res = await fetch('/api/admin/sync-images', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-password': getAdminPassword()
-        },
-        body: JSON.stringify({ artworks: missingOnServer })
-      });
-      const data = await res.json();
-      if (data.success && data.images) {
-        state.images = data.images;
-        renderAdminUI();
-        updateSyncStatusBadge(true, `${missingOnServer.length} Artworks Restored`);
+      const BATCH_SIZE = 5;
+      for (let i = 0; i < missingOnServer.length; i += BATCH_SIZE) {
+        const batch = missingOnServer.slice(i, i + BATCH_SIZE);
+        const res = await fetch('/api/admin/sync-images', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-password': getAdminPassword()
+          },
+          body: JSON.stringify({ artworks: batch })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.images) state.images = data.images;
+        }
       }
+      renderAdminUI();
+      updateSyncStatusBadge(true, `${missingOnServer.length} Artworks Restored & Synced`);
     } else {
       updateSyncStatusBadge(true, 'Saved in Browser & Synced');
     }
@@ -659,22 +739,18 @@ function triggerImageUpload() {
 
 async function handleFileSelected(input) {
   if (!input.files || input.files.length === 0) return;
-  const file = input.files[0];
-  
-  // Convert to Data URL for client IndexedDB persistence
-  let dataUrl = null;
-  try {
-    dataUrl = await readFileAsDataUrl(file);
-  } catch (e) {
-    console.warn('Could not read file data URL:', e);
-  }
-
-  const formData = new FormData();
-  formData.append('image', file);
-  formData.append('competition', state.activeCompetition);
-  formData.append('itemNumber', state.activeItemNumber);
+  const originalFile = input.files[0];
 
   try {
+    updateSyncStatusBadge(false, 'Optimizing artwork...');
+    // Compress image to crisp WebP/JPEG max 1280px for instant fast upload & small backup size
+    const { dataUrl, blob } = await compressImage(originalFile);
+
+    const formData = new FormData();
+    formData.append('image', blob, originalFile.name.replace(/\.[^.]+$/, '.webp'));
+    formData.append('competition', state.activeCompetition);
+    formData.append('itemNumber', state.activeItemNumber);
+
     updateSyncStatusBadge(false, 'Uploading artwork...');
     const res = await fetch('/api/admin/upload-image', {
       method: 'POST',
@@ -689,10 +765,8 @@ async function handleFileSelected(input) {
       if (!state.images[state.activeCompetition]) state.images[state.activeCompetition] = {};
       state.images[state.activeCompetition][state.activeItemNumber.toString()] = data.imageUrl;
 
-      // Save into persistent IndexedDB
-      if (dataUrl) {
-        await artworkDB.saveArtwork(state.activeCompetition, state.activeItemNumber, dataUrl, file.name, data.imageUrl);
-      }
+      // Save into persistent IndexedDB with full Base64 Data URL
+      await artworkDB.saveArtwork(state.activeCompetition, state.activeItemNumber, dataUrl, originalFile.name, data.imageUrl);
 
       renderAdminUI();
       updateSyncStatusBadge(true, 'Saved in Browser & Synced');
@@ -701,6 +775,7 @@ async function handleFileSelected(input) {
       updateSyncStatusBadge(false, 'Upload error');
     }
   } catch (err) {
+    console.error('Upload error:', err);
     alert('Connection error during upload.');
     updateSyncStatusBadge(false, 'Upload failed');
   } finally {
@@ -801,34 +876,51 @@ async function removeCurrentImage() {
 // Backup & Restore Artwork Pack
 async function exportArtworkBackup() {
   try {
-    let backupData;
+    updateSyncStatusBadge(false, 'Preparing backup...');
+    // Always get full artworks directly from local IndexedDB first
+    const localArtworks = await artworkDB.getAllArtworks();
+
+    // Also check server for any artworks
+    let serverArtworks = [];
     try {
       const res = await fetch('/api/admin/export-images', {
         headers: { 'x-admin-password': getAdminPassword() }
       });
       if (res.ok) {
-        backupData = await res.json();
+        const data = await res.json();
+        if (data.artworks) serverArtworks = data.artworks;
       }
     } catch (e) {
-      // Fallback
+      console.warn('Server export fetch warning:', e);
     }
 
-    if (!backupData || !backupData.artworks || backupData.artworks.length === 0) {
-      const localArtworks = await artworkDB.getAllArtworks();
-      backupData = {
-        success: true,
-        system: 'Department of Examinations, Sri Lanka Judging System',
-        version: '2.0',
-        exportedAt: new Date().toISOString(),
-        totalArtworks: localArtworks.length,
-        artworks: localArtworks
-      };
-    }
+    // Merge: Map by id (${competition}_${itemNumber})
+    const mergedMap = new Map();
+    serverArtworks.forEach(item => {
+      mergedMap.set(`${item.competition}_${item.itemNumber}`, item);
+    });
+    localArtworks.forEach(item => {
+      const existing = mergedMap.get(`${item.competition}_${item.itemNumber}`);
+      if (!existing || item.dataUrl?.startsWith('data:image/')) {
+        mergedMap.set(`${item.competition}_${item.itemNumber}`, item);
+      }
+    });
 
-    if (!backupData.artworks || backupData.artworks.length === 0) {
-      alert('No uploaded artworks found to backup.');
+    const finalArtworks = Array.from(mergedMap.values()).filter(a => a.dataUrl || a.url);
+
+    if (finalArtworks.length === 0) {
+      alert('No candidate artworks found to backup. Please upload artwork images first.');
+      updateSyncStatusBadge(true, 'Saved in Browser & Synced');
       return;
     }
+
+    const backupData = {
+      system: 'Department of Examinations, Sri Lanka Judging System',
+      version: '2.0',
+      exportedAt: new Date().toISOString(),
+      totalArtworks: finalArtworks.length,
+      artworks: finalArtworks
+    };
 
     const jsonStr = JSON.stringify(backupData, null, 2);
     const blob = new Blob([jsonStr], { type: 'application/json' });
@@ -840,8 +932,10 @@ async function exportArtworkBackup() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    updateSyncStatusBadge(true, `Backup Downloaded (${finalArtworks.length} items)`);
   } catch (err) {
     alert('Failed to export artwork backup: ' + err.message);
+    updateSyncStatusBadge(false, 'Export failed');
   }
 }
 
@@ -855,42 +949,71 @@ async function handleBackupFileSelected(input) {
   const file = input.files[0];
 
   try {
+    updateSyncStatusBadge(false, 'Reading backup file...');
     const text = await file.text();
-    const parsed = JSON.parse(text);
-    const artworks = parsed.artworks || [];
-    if (!Array.isArray(artworks) || artworks.length === 0) {
-      alert('No valid artworks found in the backup file.');
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch (parseErr) {
+      alert('Invalid backup file: The selected file is not a valid JSON document.');
+      updateSyncStatusBadge(false, 'Invalid JSON');
       return;
     }
 
-    updateSyncStatusBadge(false, `Restoring ${artworks.length} artworks...`);
+    const artworks = parsed.artworks || (Array.isArray(parsed) ? parsed : []);
+    if (!Array.isArray(artworks) || artworks.length === 0) {
+      alert('No valid artworks found in the backup file.');
+      updateSyncStatusBadge(false, 'Empty backup');
+      return;
+    }
 
     // 1. Save all to local IndexedDB
+    updateSyncStatusBadge(false, `Saving ${artworks.length} artworks locally...`);
     for (const art of artworks) {
-      await artworkDB.saveArtwork(art.competition, art.itemNumber, art.dataUrl, art.filename, art.url);
+      const dataUrl = art.dataUrl || art.url;
+      await artworkDB.saveArtwork(art.competition, art.itemNumber, dataUrl, art.filename, art.url || dataUrl);
     }
 
-    // 2. Sync to server
-    const res = await fetch('/api/admin/sync-images', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-admin-password': getAdminPassword()
-      },
-      body: JSON.stringify({ artworks })
-    });
-    const data = await res.json();
-    if (data.success) {
-      state.images = data.images;
-      renderAdminUI();
-      alert(`Success! Restored and synced ${data.restoredCount || artworks.length} candidate artworks.`);
-      updateSyncStatusBadge(true, `${artworks.length} Artworks Restored & Synced`);
-    } else {
-      alert(data.message || 'Server failed to sync backup.');
-      updateSyncStatusBadge(false, 'Sync failed');
+    // 2. Sync to server in batches of 5 to avoid network/payload limits
+    const BATCH_SIZE = 5;
+    let totalRestored = 0;
+    for (let i = 0; i < artworks.length; i += BATCH_SIZE) {
+      const batch = artworks.slice(i, i + BATCH_SIZE);
+      updateSyncStatusBadge(false, `Restoring ${Math.min(i + BATCH_SIZE, artworks.length)} / ${artworks.length}...`);
+
+      const res = await fetch('/api/admin/sync-images', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-password': getAdminPassword()
+        },
+        body: JSON.stringify({ artworks: batch })
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        let errMsg = `HTTP ${res.status}`;
+        try {
+          const errJson = JSON.parse(errText);
+          if (errJson.message) errMsg = errJson.message;
+        } catch (e) {}
+        throw new Error(`Server error syncing batch: ${errMsg}`);
+      }
+
+      const data = await res.json();
+      if (data.images) {
+        state.images = data.images;
+      }
+      totalRestored += (data.restoredCount || batch.length);
     }
+
+    renderAdminUI();
+    alert(`Success! Successfully restored and synced ${totalRestored} candidate artworks.`);
+    updateSyncStatusBadge(true, `${totalRestored} Artworks Restored & Synced`);
   } catch (err) {
+    console.error('Restore error:', err);
     alert('Error reading backup file: ' + err.message);
+    updateSyncStatusBadge(false, 'Sync failed');
   } finally {
     input.value = '';
   }
@@ -967,6 +1090,13 @@ function setupSocketListeners() {
     if (data && data.images) {
       state.images = data.images;
       renderAdminUI();
+    }
+  });
+
+  socket.on('judges-online-update', (data) => {
+    if (data && Array.isArray(data.onlineJudges)) {
+      state.onlineJudges = data.onlineJudges;
+      renderJudgesGrid();
     }
   });
 

@@ -96,21 +96,52 @@ function saveState() {
   }
 }
 
+// Live connected judges tracking
+const connectedJudgeSockets = new Map(); // socket.id -> judgeId
+
+function getOnlineJudgeIds() {
+  return Array.from(new Set(connectedJudgeSockets.values()));
+}
+
+function broadcastJudgeAttendance() {
+  io.emit('judges-online-update', { onlineJudges: getOnlineJudgeIds() });
+}
+
 // Middleware
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Public State API
 app.get('/api/state', (req, res) => {
+  // Validate that local /uploads/ files actually exist on disk
+  const validatedImages = { flags: {}, emblems: {}, stamps: {} };
+  if (state.images) {
+    for (const comp of ['flags', 'emblems', 'stamps']) {
+      const compImgs = state.images[comp] || {};
+      for (const [num, url] of Object.entries(compImgs)) {
+        if (!url) continue;
+        if (url.startsWith('/uploads/')) {
+          const filePath = path.join(__dirname, 'public', url.replace(/^\//, ''));
+          if (fs.existsSync(filePath)) {
+            validatedImages[comp][num] = url;
+          }
+        } else {
+          validatedImages[comp][num] = url;
+        }
+      }
+    }
+  }
+
   res.json({
     activeCompetition: state.activeCompetition,
     activeItemNumber: state.activeItemNumber,
     votingOpen: state.votingOpen,
     totalItems: state.totalItems,
     scores: state.scores,
-    images: state.images || { flags: {}, emblems: {}, stamps: {} },
+    images: validatedImages,
+    onlineJudges: getOnlineJudgeIds(),
     judges: state.judges.map(j => ({ id: j.id, name: j.name })) // exclude PIN
   });
 });
@@ -369,6 +400,8 @@ app.post('/api/admin/sync-images', checkAdminAuth, (req, res) => {
     if (!state.images) state.images = { flags: {}, emblems: {}, stamps: {} };
 
     let restoredCount = 0;
+    if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+
     artworks.forEach(item => {
       const { competition, itemNumber, dataUrl, url } = item;
       const num = parseInt(itemNumber, 10);
@@ -390,11 +423,15 @@ app.post('/api/admin/sync-images', checkAdminAuth, (req, res) => {
             const filePath = path.join(UPLOADS_DIR, filename);
             fs.writeFileSync(filePath, Buffer.from(base64Data, 'base64'));
             finalUrl = `/uploads/${filename}`;
+          } else {
+            finalUrl = dataUrl;
           }
         } catch (e) {
           console.error('Error writing synced image file:', e);
           finalUrl = dataUrl;
         }
+      } else if (!finalUrl && dataUrl) {
+        finalUrl = dataUrl;
       }
 
       if (finalUrl) {
@@ -529,10 +566,21 @@ app.get('/api/export/csv', (req, res) => {
 
 // Socket connection
 io.on('connection', (socket) => {
-  // Client can register
   socket.on('register', (data) => {
     socket.data.role = data.role;
-    socket.data.judgeId = data.judgeId;
+    if (data.role === 'judge' && data.judgeId) {
+      const numId = parseInt(data.judgeId, 10);
+      socket.data.judgeId = numId;
+      connectedJudgeSockets.set(socket.id, numId);
+      broadcastJudgeAttendance();
+    }
+  });
+
+  socket.on('disconnect', () => {
+    if (connectedJudgeSockets.has(socket.id)) {
+      connectedJudgeSockets.delete(socket.id);
+      broadcastJudgeAttendance();
+    }
   });
 });
 
